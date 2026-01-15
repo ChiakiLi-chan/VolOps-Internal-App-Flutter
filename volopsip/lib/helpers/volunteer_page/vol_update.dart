@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+import 'package:volopsip/models/volunteer.dart';
+
+class EditVolunteerForm extends StatefulWidget {
+  final Volunteer volunteer;
+  final Function(Volunteer) onSave;
+
+  const EditVolunteerForm({
+    super.key,
+    required this.volunteer,
+    required this.onSave,
+  });
+
+  @override
+  State<EditVolunteerForm> createState() => _EditVolunteerFormState();
+}
+
+class _EditVolunteerFormState extends State<EditVolunteerForm> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _nicknameController;
+  late TextEditingController _ageController;
+  late TextEditingController _emailController;
+  late TextEditingController _contactController;
+
+  late String volunteerType;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(text: widget.volunteer.firstName);
+    _lastNameController = TextEditingController(text: widget.volunteer.lastName);
+    _nicknameController = TextEditingController(text: widget.volunteer.nickname ?? '');
+    _ageController = TextEditingController(text: widget.volunteer.age.toString());
+    _emailController = TextEditingController(text: widget.volunteer.email);
+    _contactController = TextEditingController(text: widget.volunteer.contactNumber);
+    volunteerType = widget.volunteer.volunteerType;
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _nicknameController.dispose();
+    _ageController.dispose();
+    _emailController.dispose();
+    _contactController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: _firstNameController,
+            decoration: const InputDecoration(labelText: 'First Name'),
+            validator: (v) => v == null || v.isEmpty ? 'Enter first name' : null,
+          ),
+          TextFormField(
+            controller: _lastNameController,
+            decoration: const InputDecoration(labelText: 'Last Name'),
+            validator: (v) => v == null || v.isEmpty ? 'Enter last name' : null,
+          ),
+          TextFormField(
+            controller: _nicknameController,
+            decoration: const InputDecoration(labelText: 'Nickname (optional)'),
+          ),
+          TextFormField(
+            controller: _ageController,
+            decoration: const InputDecoration(labelText: 'Age'),
+            keyboardType: TextInputType.number,
+            validator: (v) => v == null || int.tryParse(v) == null ? 'Enter valid age' : null,
+          ),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
+            validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
+          ),
+          TextFormField(
+            controller: _contactController,
+            decoration: const InputDecoration(labelText: 'Contact Number'),
+            validator: (v) => v == null || v.isEmpty ? 'Enter contact number' : null,
+          ),
+          DropdownButtonFormField<String>(
+            value: volunteerType,
+            items: const [
+              DropdownMenuItem(value: 'Core', child: Text('Core')),
+              DropdownMenuItem(value: 'OTD', child: Text('OTD')),
+            ],
+            onChanged: (val) => volunteerType = val!,
+            decoration: const InputDecoration(labelText: 'Volunteer Type'),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                final updatedVolunteer = Volunteer(
+                  uuid: widget.volunteer.uuid,
+                  id: widget.volunteer.id,
+                  firstName: _firstNameController.text.trim(),
+                  lastName: _lastNameController.text.trim(),
+                  nickname: _nicknameController.text.trim().isEmpty
+                      ? null
+                      : _nicknameController.text.trim(),
+                  age: int.parse(_ageController.text.trim()),
+                  email: _emailController.text.trim(),
+                  contactNumber: _contactController.text.trim(),
+                  volunteerType: volunteerType,
+                );
+                widget.onSave(updatedVolunteer);
+              }
+            },
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+}
