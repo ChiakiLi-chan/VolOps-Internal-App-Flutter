@@ -3,6 +3,7 @@ import 'package:volopsip/models/event_assignment.dart';
 import 'package:volopsip/models/events.dart';
 import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/repo/events_repo.dart';
+import 'package:volopsip/helpers/events_page/additional_volunteers_to_event.dart';
 
 class EventDetailsModal extends StatefulWidget {
   final Event event;
@@ -115,14 +116,52 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
               widget.event.name,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            trailing: IconButton(
-              icon: Icon(editMode ? Icons.close : Icons.edit),
-              onPressed: () {
-                setState(() {
-                  editMode = !editMode;
-                  if (!editMode) selectedVolunteerIds.clear();
-                });
-              },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min, // important so the row doesn't take full width
+              children: [
+                // --- Add Volunteers icon ---
+                IconButton(
+                  icon: const Icon(Icons.person_add_alt_1, color: Colors.green),
+                  onPressed: () async {
+                    await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => AddVolunteersToEventModal(
+                        eventId: widget.event.id!,
+                        allVolunteers: widget.volunteers,
+                        currentAssignments: widget.assignments,
+                        onAdded: () async {
+                          // Refresh assignments in this modal after adding
+                          final updatedAssignments =
+                              await EventRepository().getAllEventAssignments();
+
+                          widget.assignments.clear();
+                          widget.assignments.addAll(
+                              updatedAssignments
+                                  .where((a) => a.eventId == widget.event.id));
+
+                          _groupAssignments();
+                          setState(() {}); // refresh UI
+
+                          // Notify parent to refresh numbers in EventList
+                          if (widget.onUpdated != null) await widget.onUpdated!();
+                        },
+                      ),
+                    );
+                  },
+                ),
+
+                // --- Edit/Close icon ---
+                IconButton(
+                  icon: Icon(editMode ? Icons.close : Icons.edit),
+                  onPressed: () {
+                    setState(() {
+                      editMode = !editMode;
+                      if (!editMode) selectedVolunteerIds.clear();
+                    });
+                  },
+                ),
+              ],
             ),
           ),
           const Divider(),

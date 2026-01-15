@@ -97,6 +97,32 @@ class EventRepository {
     return result;
   }
 
+  Future<void> addVolunteersToEvent(int eventId, List<int> volunteerIds) async {
+    if (volunteerIds.isEmpty) return;
+
+    final db = await database;
+    final batch = db.batch();
+
+    for (var volId in volunteerIds) {
+      // Check if this volunteer is already assigned to avoid duplicates
+      final exists = await db.query(
+        'event_volunteers',
+        where: 'event_id = ? AND volunteer_id = ?',
+        whereArgs: [eventId, volId],
+        limit: 1,
+      );
+
+      if (exists.isEmpty) {
+        batch.insert('event_volunteers', {
+          'event_id': eventId,
+          'volunteer_id': volId,
+          'attribute': '', // default to Unassigned
+        });
+      }
+    }
+
+    await batch.commit(noResult: true);
+  }
 
   /// Delete an event and its volunteer assignments
   Future<int> deleteEvent(int id) async {
