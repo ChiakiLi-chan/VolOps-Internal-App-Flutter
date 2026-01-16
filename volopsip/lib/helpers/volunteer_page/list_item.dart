@@ -4,12 +4,12 @@ import 'package:volopsip/helpers/volunteer_page/vol_details.dart'; // make sure 
 
 class VolunteerListItem extends StatelessWidget {
   final Volunteer volunteer;
-  final VoidCallback onVolunteerUpdated; // callback to refresh list after edit/delete
+  final VoidCallback? onVolunteerUpdated; // now optional
 
   const VolunteerListItem({
     super.key,
     required this.volunteer,
-    required this.onVolunteerUpdated,
+    this.onVolunteerUpdated, // optional
   });
 
   void _showDetails(BuildContext context) {
@@ -18,7 +18,7 @@ class VolunteerListItem extends StatelessWidget {
       isScrollControlled: true,
       builder: (_) => VolunteerDetailsModal(
         volunteer: volunteer,
-        onVolunteerUpdated: onVolunteerUpdated,
+        onVolunteerUpdated: onVolunteerUpdated ?? () {}, // fallback if null
       ),
     );
   }
@@ -29,7 +29,6 @@ class VolunteerListItem extends StatelessWidget {
       onTap: () => _showDetails(context),
       child: Column(
         children: [
-          // Placeholder square for image
           Container(
             width: 100,
             height: 100,

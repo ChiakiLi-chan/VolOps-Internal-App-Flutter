@@ -3,6 +3,9 @@ import '../repo/volunteer_repo.dart';
 import '../models/volunteer.dart';
 import 'package:volopsip/modal/add_volunteer.dart';
 import 'package:volopsip/helpers/volunteer_page/list_item.dart';
+import 'package:provider/provider.dart';
+import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
+
 
 class VolunteerPage extends StatefulWidget {
   const VolunteerPage({super.key});
@@ -12,21 +15,12 @@ class VolunteerPage extends StatefulWidget {
 }
 
 class _VolunteerPageState extends State<VolunteerPage> {
-  final VolunteerRepository _repo = VolunteerRepository();
-  List<Volunteer> volunteers = [];
-  bool isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    fetchVolunteers();
-  }
-
-  Future<void> fetchVolunteers() async {
-    final data = await _repo.getAllVolunteers();
-    setState(() {
-      volunteers = data;
-      isLoading = false;
+    // Fetch volunteers when page is first opened
+    Future.microtask(() {
+      context.read<VolunteerProvider>().fetchVolunteers();
     });
   }
 
@@ -35,15 +29,20 @@ class _VolunteerPageState extends State<VolunteerPage> {
       context: context,
       isScrollControlled: true,
       builder: (_) => AddVolunteerModal(
-        onVolunteerAdded: fetchVolunteers,
+        onVolunteerAdded: () {
+          context.read<VolunteerProvider>().refresh();
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<VolunteerProvider>();
+
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Volunteers'),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
@@ -59,9 +58,9 @@ class _VolunteerPageState extends State<VolunteerPage> {
           ),
         ],
       ),
-      body: isLoading
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : volunteers.isEmpty
+          : provider.volunteers.isEmpty
               ? const Center(
                   child: Text(
                     'No volunteer information in database',
@@ -75,11 +74,14 @@ class _VolunteerPageState extends State<VolunteerPage> {
                       crossAxisCount: 4, // 4 columns
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 0.8, // adjust for square + name
+                      childAspectRatio: 0.8,
                     ),
-                    itemCount: volunteers.length,
+                    itemCount: provider.volunteers.length,
                     itemBuilder: (context, index) {
-                      return VolunteerListItem(volunteer: volunteers[index], onVolunteerUpdated: fetchVolunteers,);
+                      return VolunteerListItem(
+                        volunteer: provider.volunteers[index],
+                        onVolunteerUpdated: provider.refresh, // refresh after edit/delete
+                      );
                     },
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/volunteer.dart';
 import '../repo/volunteer_repo.dart';
+//import 'package:uuid/uuid.dart';
 
 class AddVolunteerModal extends StatefulWidget {
   final VoidCallback onVolunteerAdded;
@@ -123,6 +124,7 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     final newVolunteer = Volunteer(
+                      //uuid: const Uuid().v4(),
                       firstName: _firstNameController.text.trim(),
                       lastName: _lastNameController.text.trim(),
                       nickname: _nicknameController.text.trim().isEmpty

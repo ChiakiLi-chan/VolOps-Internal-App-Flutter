@@ -30,6 +30,19 @@ class VolunteerRepository {
     if (result.isEmpty) return null;
     return Volunteer.fromMap(result.first);
   }
+  
+   /// READ (single by UUID)
+  Future<Volunteer?> getVolunteerByUuid(String uuid) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'volunteers',
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+
+    if (result.isEmpty) return null;
+    return Volunteer.fromMap(result.first);
+  }
 
   /// UPDATE
   Future<int> updateVolunteer(Volunteer volunteer) async {

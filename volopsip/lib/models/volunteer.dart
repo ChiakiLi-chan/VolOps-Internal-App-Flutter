@@ -27,6 +27,7 @@ class Volunteer {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'uuid': uuid, 
       'first_name': firstName,
       'last_name': lastName,
       'nickname': nickname,
