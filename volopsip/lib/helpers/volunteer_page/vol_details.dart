@@ -147,6 +147,7 @@ class VolunteerInfoView extends StatelessWidget {
         Text('Email: ${volunteer.email}'),
         Text('Contact: ${volunteer.contactNumber}'),
         Text('Type: ${volunteer.volunteerType}'),
+        Text('Department: ${volunteer.department}'),
       ],
     );
   }

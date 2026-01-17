@@ -50,6 +50,7 @@ class AddVolunteerExcelModal extends StatelessWidget {
           email: row[4]?.value.toString() ?? '',
           contactNumber: row[5]?.value.toString() ?? '',
           volunteerType: row[6]?.value.toString() ?? 'OTD',
+          department: row[7]?.value.toString() ?? '',
         );
 
         await repo.createVolunteer(volunteer);

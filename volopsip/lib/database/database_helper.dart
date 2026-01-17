@@ -42,7 +42,8 @@ class DatabaseHelper {
         age INTEGER NOT NULL,
         email TEXT NOT NULL,
         contact_number TEXT NOT NULL,
-        volunteer_type TEXT NOT NULL
+        volunteer_type TEXT NOT NULL,
+        department TEXT NOT NULL
       )
     ''');
 

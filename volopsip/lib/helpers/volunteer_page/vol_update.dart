@@ -25,6 +25,7 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
   late TextEditingController _contactController;
 
   late String volunteerType;
+  late String department;
 
   @override
   void initState() {
@@ -95,6 +96,20 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
             onChanged: (val) => volunteerType = val!,
             decoration: const InputDecoration(labelText: 'Volunteer Type'),
           ),
+          DropdownButtonFormField<String>(
+            value: department,
+            items: const [
+              DropdownMenuItem(value: 'Finance', child: Text('Finance')),
+              DropdownMenuItem(value: 'Marketing', child: Text('Marketing')),
+              DropdownMenuItem(value: 'Talents', child: Text('Talents')),
+              DropdownMenuItem(value: 'Production', child: Text('Production')),
+              DropdownMenuItem(value: 'Logistics', child: Text('Logistics')),
+              DropdownMenuItem(value: 'Security and Sanitation', child: Text('Security and Sanitation')),
+              DropdownMenuItem(value: 'Volunteer Operations', child: Text('Volunteer Operations')),
+            ],
+            onChanged: (val) => department = val!,
+            decoration: const InputDecoration(labelText: 'Department'),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
@@ -106,11 +121,12 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
                   lastName: _lastNameController.text.trim(),
                   nickname: _nicknameController.text.trim().isEmpty
                       ? null
-                      : _nicknameController.text.trim(),
+                      : _nicknameController.text.trim(), 
                   age: int.parse(_ageController.text.trim()),
                   email: _emailController.text.trim(),
                   contactNumber: _contactController.text.trim(),
                   volunteerType: volunteerType,
+                  department:  department,
                 );
                 widget.onSave(updatedVolunteer);
               }

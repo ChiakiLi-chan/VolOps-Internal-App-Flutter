@@ -24,7 +24,8 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
-  String volunteerType = 'OTD';
+  String volunteerType = 'Core';
+  String department = 'Finance';
 
   @override
   void dispose() {
@@ -115,7 +116,20 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
                 onChanged: (val) => volunteerType = val!,
                 decoration: const InputDecoration(labelText: 'Volunteer Type'),
               ),
-
+              DropdownButtonFormField<String>(
+                value: department,
+                items: const [
+                  DropdownMenuItem(value: 'Finance', child: Text('Finance')),
+                  DropdownMenuItem(value: 'Marketing', child: Text('Marketing')),
+                  DropdownMenuItem(value: 'Talents', child: Text('Talents')),
+                  DropdownMenuItem(value: 'Production', child: Text('Production')),
+                  DropdownMenuItem(value: 'Logistics', child: Text('Logistics')),
+                  DropdownMenuItem(value: 'Security and Sanitation', child: Text('Security and Sanitation')),
+                  DropdownMenuItem(value: 'Volunteer Operations', child: Text('Volunteer Operations')),
+                ],
+                onChanged: (val) => department = val!,
+                decoration: const InputDecoration(labelText: 'Department'),
+              ),
               const SizedBox(height: 16),
 
               // Add Button
@@ -134,6 +148,7 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
                       email: _emailController.text.trim(),
                       contactNumber: _contactController.text.trim(),
                       volunteerType: volunteerType,
+                      department: department, 
                     );
 
                     await _repo.createVolunteer(newVolunteer);
