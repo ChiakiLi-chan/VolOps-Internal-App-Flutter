@@ -3,6 +3,7 @@ import '../../models/events.dart';
 import '../../models/event_assignment.dart';
 import 'package:volopsip/helpers/events_page/events_details.dart'; // import modal
 import 'package:volopsip/models/volunteer.dart';
+import 'package:volopsip/helpers/pdf/event_pdf.dart';
 
 class EventList extends StatelessWidget {
   final List<Event> events;
@@ -53,6 +54,17 @@ class EventList extends StatelessWidget {
             leading: const Icon(Icons.assignment),
             title: Text(event.name),
             subtitle: Text(subtitleText),
+            trailing: IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Export PDF',
+              onPressed: () async {
+                await EventPdfExporter.export(
+                  event: event,
+                  assignments: eventAssignments,
+                  volunteers: allVolunteers,
+                );
+              },
+            ),
             onTap: () {
               showModalBottomSheet(
                 context: context,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../repo/volunteer_repo.dart';
 import '../models/volunteer.dart';
 import 'package:volopsip/modal/add_volunteer.dart';
+import 'package:volopsip/modal/add_volunteer_excel_modal.dart';
 import 'package:volopsip/helpers/volunteer_page/list_item.dart';
 import 'package:provider/provider.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
@@ -36,6 +37,18 @@ class _VolunteerPageState extends State<VolunteerPage> {
     );
   }
 
+  void _openAddVolunteerExcelModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => AddVolunteerExcelModal(
+        onVolunteersAdded: () {
+          context.read<VolunteerProvider>().refresh();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<VolunteerProvider>();
@@ -56,6 +69,20 @@ class _VolunteerPageState extends State<VolunteerPage> {
               label: const Text('Add Volunteer'),
             ),
           ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: _openAddVolunteerExcelModal,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Import Excel'),
+            ),
+          ),
+
         ],
       ),
       body: provider.isLoading
