@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:volopsip/helpers/qr_connection/websocket_server.dart';
 import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';
+import 'package:volopsip/helpers/listeners/message_handler.dart';
 
 class ConnectQrWs extends StatefulWidget {
   final void Function(String ip)? onPhoneConnected;
@@ -19,6 +20,9 @@ class ConnectQrWs extends StatefulWidget {
 
 class _ConnectQrWsState extends State<ConnectQrWs> {
   final serverSingleton = PersistentWebSocketServer();
+
+  late final PhoneMessageHandler messageHandler;
+
   String lastMessage = 'Waiting for phone...';
   String? localIp;
   bool phoneConnected = false;
@@ -27,6 +31,15 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
   @override
   void initState() {
     super.initState();
+
+    messageHandler = PhoneMessageHandler(
+      onMessage: (msg) {
+        if (!mounted) return;
+        setState(() => lastMessage = msg);
+      },
+      onPing: _showPingDialog,
+    );
+
     _initServer();
   }
 
@@ -59,17 +72,11 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
       }
     };
 
-    // Start the server (if not already running)
     await serverSingleton.server.start((msg) {
       if (!mounted) return;
-
-      setState(() {
-        lastMessage = msg;
-      });
-
-      // Show dialog if phone sends "ping"
-      if (msg.toLowerCase() == 'ping') _showPingDialog();
+      messageHandler.handle(msg);
     });
+
 
     if (!mounted) return;
     setState(() {
