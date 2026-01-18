@@ -43,7 +43,7 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
 
         // Show dialog for all non-ping messages
         if (msg.toLowerCase() != 'ping') {
-          _showMessageDialog(msg);
+          //_showMessageDialog(msg); #For debugging purposes
           showVolunteerPopup(context, msg); 
         }
       },

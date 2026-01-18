@@ -56,7 +56,8 @@ class _ScanVolunteerQRState extends State<ScanVolunteerQR> {
       barrierDismissible: false, // force user to press OK
       builder: (context) => AlertDialog(
         title: const Text('QR Scanned'),
-        content: Text(code),
+        //content: Text(code),
+        content: Text("Volunteer QR Scanned. Press OK to show profile."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, code), // returns QR code
