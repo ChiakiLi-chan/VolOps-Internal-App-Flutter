@@ -3,6 +3,7 @@ import '../repo/volunteer_repo.dart';
 import '../models/volunteer.dart';
 import 'package:volopsip/modal/add_volunteer.dart';
 import 'package:volopsip/modal/add_volunteer_excel_modal.dart';
+import 'package:volopsip/modal/filter_volunteer_modal.dart';
 import 'package:volopsip/helpers/volunteer_page/list_item.dart';
 import 'package:provider/provider.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
@@ -49,6 +50,32 @@ class _VolunteerPageState extends State<VolunteerPage> {
     );
   }
 
+  void _openFilterModal() {
+  final provider = context.read<VolunteerProvider>();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => FilterVolunteerModal(
+      selectedVolunteerType: provider.filterVolunteerType,
+      selectedDepartments: provider.filterDepartments,
+      departments: provider.availableDepartments,
+      onApply: ({
+        String? volunteerType,
+        Set<String>? departments,
+      }) {
+        provider.applyFilters(
+          volunteerType: volunteerType,
+          departments: departments,
+        );
+      },
+    ),
+  );
+}
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<VolunteerProvider>();
@@ -83,6 +110,11 @@ class _VolunteerPageState extends State<VolunteerPage> {
             ),
           ),
 
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Filter',
+            onPressed: _openFilterModal,
+          ),
         ],
       ),
       body: provider.isLoading
