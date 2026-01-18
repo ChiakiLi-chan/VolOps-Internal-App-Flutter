@@ -4,7 +4,6 @@ import 'package:path/path.dart' as path; // rename to avoid clash
 import 'package:provider/provider.dart';
 
 // Desktop SQLite
-import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 //Helpers
