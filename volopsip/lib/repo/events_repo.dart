@@ -66,6 +66,77 @@ class EventRepository {
     );
   }
 
+  /// Returns a map of eventId -> attribute for the given volunteer
+  Future<Map<int, String>> getVolunteerEventAssignments(int volunteerId) async {
+    final db = await database;
+    final result = await db.query(
+      'event_volunteers',
+      where: 'volunteer_id = ?',
+      whereArgs: [volunteerId],
+    );
+
+    // Map: eventId -> attribute
+    return {
+      for (var m in result)
+        m['event_id'] as int: (m['attribute'] as String?) ?? 'Unassigned',
+    };
+  }
+
+  /// Update attribute for a volunteer already assigned to an event
+  Future<void> updateAssignmentAttributeForVolunteer(
+      int volunteerId, int eventId, String attribute) async {
+    final db = await database;
+    await db.update(
+      'event_volunteers',
+      {'attribute': attribute},
+      where: 'volunteer_id = ? AND event_id = ?',
+      whereArgs: [volunteerId, eventId],
+    );
+  }
+
+
+    /// Add a single volunteer to an event with attribute
+  Future<void> addVolunteerToEventWithAttribute(
+      int volunteerId, int eventId, String attribute) async {
+    final db = await database;
+
+    // Avoid duplicates
+    final exists = await db.query(
+      'event_volunteers',
+      where: 'volunteer_id = ? AND event_id = ?',
+      whereArgs: [volunteerId, eventId],
+      limit: 1,
+    );
+
+    if (exists.isEmpty) {
+      await db.insert('event_volunteers', {
+        'volunteer_id': volunteerId,
+        'event_id': eventId,
+        'attribute': attribute,
+      });
+    } else {
+      // update attribute if already exists
+      await db.update(
+        'event_volunteers',
+        {'attribute': attribute},
+        where: 'volunteer_id = ? AND event_id = ?',
+        whereArgs: [volunteerId, eventId],
+      );
+    }
+  }
+
+  /// Delete assignment for a specific volunteer and event
+  Future<void> deleteAssignment(int volunteerId, int eventId) async {
+    final db = await database;
+    await db.delete(
+      'event_volunteers',
+      where: 'volunteer_id = ? AND event_id = ?',
+      whereArgs: [volunteerId, eventId],
+    );
+  }
+
+
+
   /// Update an event and optionally its volunteers
   Future<int> updateEvent(Event event, {List<int>? volunteerIds}) async {
     final db = await database;

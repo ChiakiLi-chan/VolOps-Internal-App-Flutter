@@ -80,14 +80,24 @@ class EventList extends StatelessWidget {
             ),
 
             onTap: () {
-              showModalBottomSheet(
+              showDialog(
                 context: context,
-                isScrollControlled: true,
-                builder: (_) => EventDetailsModal(
-                  event: event,
-                  assignments: eventAssignments,
-                  volunteers: allVolunteers,
-                  onUpdated: onUpdated,
+                builder: (_) => Dialog(
+                  insetPadding: const EdgeInsets.all(20),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
+                      maxWidth: 500, // optional width
+                    ),
+                    child: SingleChildScrollView(
+                      child: EventDetailsModal(
+                        event: event,
+                        assignments: eventAssignments,
+                        volunteers: allVolunteers,
+                        onUpdated: onUpdated,
+                      ),
+                    ),
+                  ),
                 ),
               );
             },

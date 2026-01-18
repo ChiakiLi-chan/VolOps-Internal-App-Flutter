@@ -3,6 +3,7 @@ import '../repo/volunteer_repo.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_details.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:volopsip/modal/add_volunteer_to_event.dart';
 
 
 Future<void> showVolunteerPopup(BuildContext context, String uuid) async {
@@ -106,13 +107,20 @@ Future<void> showVolunteerPopup(BuildContext context, String uuid) async {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     OutlinedButton.icon(
-                      icon: const Icon(Icons.event),
-                      label: const Text('Add to Event'),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // TODO: Add to event logic
-                      },
-                    ),
+                        icon: const Icon(Icons.event),
+                        label: const Text('Add to Event'),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) {
+                              return ProfileAddVolunteerToEvent(
+                                volunteer: volunteer,
+                              );
+                            },
+                          );
+                        },
+                      ),
                     const SizedBox(width: 8),
                     TextButton(
                       child: const Text('View Profile'),

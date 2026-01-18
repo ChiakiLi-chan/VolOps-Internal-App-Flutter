@@ -5,6 +5,7 @@ import 'package:volopsip/repo/events_repo.dart';
 import 'package:volopsip/modal/add_event.dart';
 import 'package:volopsip/helpers/events_page/list_event.dart';
 import 'package:volopsip/models/volunteer.dart';
+import 'package:volopsip/helpers/listeners/event_notifier.dart';
 import 'package:volopsip/repo/volunteer_repo.dart';
 
 class EventsPage extends StatefulWidget {
@@ -26,7 +27,21 @@ class _EventsPageState extends State<EventsPage> {
     super.initState();
     fetchVolunteers();
     fetchEventsAndAssignments();
+
+    // Listen to global notifier
+    volunteerEventNotifier.addListener(_onVolunteerEventUpdated);
   }
+
+  @override
+  void dispose() {
+    volunteerEventNotifier.removeListener(_onVolunteerEventUpdated);
+    super.dispose();
+  }
+
+  void _onVolunteerEventUpdated() {
+    fetchEventsAndAssignments(); // refresh page whenever an assignment changes
+  }
+
 
   Future<void> fetchVolunteers() async {
     final volunteersData = await _volRepo.getAllVolunteers();
