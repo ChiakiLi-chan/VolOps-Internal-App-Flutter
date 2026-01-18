@@ -1,12 +1,10 @@
-import 'package:volopsip/pages/connect_qr.dart';
 import 'package:flutter/foundation.dart';
-
 
 typedef PhoneMessageCallback = void Function(String message);
 
 class PhoneMessageHandler {
-  final PhoneMessageCallback onMessage;
-  final VoidCallback? onPing;
+  final PhoneMessageCallback onMessage; // called for any message
+  final VoidCallback? onPing;           // called only for "ping"
 
   PhoneMessageHandler({
     required this.onMessage,
@@ -14,16 +12,12 @@ class PhoneMessageHandler {
   });
 
   void handle(String msg) {
-    onMessage(msg);
-
-    switch (msg.toLowerCase()) {
-      case 'ping':
-        onPing?.call();
-        break;
-
-      // future messages
-      // case 'sync':
-      // case 'disconnect':
+    // If message is ping, call onPing
+    if (msg.toLowerCase() == 'ping') {
+      onPing?.call();
+    } else {
+      // Otherwise call onMessage
+      onMessage(msg);
     }
   }
 }

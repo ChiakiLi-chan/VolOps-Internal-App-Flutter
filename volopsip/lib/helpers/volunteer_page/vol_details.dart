@@ -113,7 +113,7 @@ class _VolunteerDetailsModalState extends State<VolunteerDetailsModal> {
                     Center(
                       child: QrImageView(
                         data: volunteer.uuid, 
-                        size: 180,
+                        size: 280,
                         backgroundColor: Colors.white,
                       ),
                     ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'qr_scan_page.dart';
-import 'phone_connect_page.dart'; // your PhoneConnectionHandler
-import 'scan_qr_action.dart'; // new file with ScanQrActionPage
+import 'phone_connect_page.dart'; 
+import 'package:volopsip_phone/qr_scan_page_connected.dart';
+import 'scan_qr_action.dart'; 
 
 class ScanLandingPage extends StatefulWidget {
   const ScanLandingPage({super.key});
@@ -60,11 +61,27 @@ class _ScanLandingPageState extends State<ScanLandingPage> {
     _handler.send('ping'); // send message to PC
   }
 
+  void _volunteerQrScanned(String qrData) {
+    _handler.send(qrData);
+  }
+
   @override
   void dispose() {
     _handler.dispose();
     super.dispose();
   }
+
+  Future<void> _scanVolunteerQr() async {
+    final qrData = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => ScanVolunteerQR()),
+    );
+
+    if (qrData == null) return;
+
+    _volunteerQrScanned(qrData);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +143,10 @@ class _ScanLandingPageState extends State<ScanLandingPage> {
             const SizedBox(height: 20),
 
             // Scan QR Code button
-            ScanQrActionPage(isConnected: isConnected),
+            ScanQrActionPage(
+              isConnected: isConnected,
+              onScan: _scanVolunteerQr,
+            ),
           ],
         ),
       ),

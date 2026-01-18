@@ -24,7 +24,7 @@ class Volunteer {
     required this.contactNumber,
     required this.volunteerType,
     required this.department,
-  }) : uuid = uuid ?? _uuid.v4();
+  }) : uuid = uuid ?? 'VQROF2026-${_uuid.v4()}';
 
   Map<String, dynamic> toMap() {
     return {

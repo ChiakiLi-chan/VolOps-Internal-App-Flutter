@@ -1,26 +1,15 @@
-// file: scan_qr_action.dart
 import 'package:flutter/material.dart';
 
 class ScanQrActionPage extends StatelessWidget {
   final bool isConnected;
+  final VoidCallback? onScan; // ✅ callback to trigger scanning
 
-  const ScanQrActionPage({super.key, required this.isConnected});
+  const ScanQrActionPage({super.key, required this.isConnected, this.onScan});
 
   void _showMessage(BuildContext context) {
     if (isConnected) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('QR Scan'),
-          content: const Text('Working'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      // Trigger actual QR scan
+      onScan?.call(); // ✅ call the passed function
     } else {
       showDialog(
         context: context,

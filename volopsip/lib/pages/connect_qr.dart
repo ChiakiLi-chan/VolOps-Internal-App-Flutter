@@ -3,6 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:volopsip/helpers/qr_connection/websocket_server.dart';
 import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';
 import 'package:volopsip/helpers/listeners/message_handler.dart';
+import 'package:volopsip/modal/profile_modal.dart'; 
 
 class ConnectQrWs extends StatefulWidget {
   final void Function(String ip)? onPhoneConnected;
@@ -32,10 +33,19 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
   void initState() {
     super.initState();
 
+    // Message handler
     messageHandler = PhoneMessageHandler(
       onMessage: (msg) {
         if (!mounted) return;
+
+        // Update the label
         setState(() => lastMessage = msg);
+
+        // Show dialog for all non-ping messages
+        if (msg.toLowerCase() != 'ping') {
+          _showMessageDialog(msg);
+          showVolunteerPopup(context, msg); 
+        }
       },
       onPing: _showPingDialog,
     );
@@ -43,40 +53,55 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
     _initServer();
   }
 
+  Future<void> _showMessageDialog(String message) async {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Message from Phone'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+
   Future<void> _initServer() async {
     localIp = await LocalWebSocketServer.getLocalIp();
 
-    // Assign client connected callback only once
+    // Client connected callback
     serverSingleton.server.onClientConnected ??= () {
       if (!mounted) return;
       setState(() {
         phoneConnected = true;
         lastMessage = 'Phone connected!';
       });
-
       if (widget.onPhoneConnected != null && localIp != null) {
         widget.onPhoneConnected!(localIp!);
       }
     };
 
-    // Assign client disconnected callback
+    // Client disconnected callback
     serverSingleton.server.onClientDisconnected ??= () {
       if (!mounted) return;
       setState(() {
         phoneConnected = false;
         lastMessage = 'Phone disconnected';
       });
-
-      if (widget.onPhoneDisconnected != null) {
-        widget.onPhoneDisconnected!();
-      }
+      widget.onPhoneDisconnected?.call();
     };
 
+    // Start server
     await serverSingleton.server.start((msg) {
       if (!mounted) return;
       messageHandler.handle(msg);
     });
-
 
     if (!mounted) return;
     setState(() {
@@ -86,6 +111,7 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
 
   Future<void> _showPingDialog() async {
     if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -103,7 +129,7 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
 
   @override
   void dispose() {
-    // Do NOT stop the server to keep it persistent
+    // Keep the server persistent
     super.dispose();
   }
 
