@@ -4,6 +4,10 @@ import '../../models/event_assignment.dart';
 import 'package:volopsip/helpers/events_page/events_details.dart'; // import modal
 import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/helpers/pdf/event_pdf.dart';
+import 'package:volopsip/modal/event_pdf_filter_modal.dart';
+import 'package:volopsip/helpers/pdf/event_pdf_filter.dart';
+
+
 
 class EventList extends StatelessWidget {
   final List<Event> events;
@@ -57,14 +61,24 @@ class EventList extends StatelessWidget {
             trailing: IconButton(
               icon: const Icon(Icons.picture_as_pdf),
               tooltip: 'Export PDF',
-              onPressed: () async {
-                await EventPdfExporter.export(
-                  event: event,
-                  assignments: eventAssignments,
-                  volunteers: allVolunteers,
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => EventPdfFilterModal(
+                    initialFilter: const EventPdfFilter(), // default = no filters
+                    onApply: (filter) async {
+                      await EventPdfExporter.export(
+                        event: event,
+                        assignments: eventAssignments,
+                        filter: filter,
+                      );
+                    },
+                  ),
                 );
               },
             ),
+
             onTap: () {
               showModalBottomSheet(
                 context: context,

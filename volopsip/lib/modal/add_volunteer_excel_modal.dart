@@ -14,6 +14,10 @@ class AddVolunteerExcelModal extends StatelessWidget {
     required this.onVolunteersAdded,
   });
 
+  String _key(String firstName, String lastName) {
+    return '${firstName.trim().toLowerCase()}|${lastName.trim().toLowerCase()}';
+  }
+
   Future<void> _importExcel(BuildContext context) async {
     final repo = VolunteerRepository();
 
@@ -25,25 +29,50 @@ class AddVolunteerExcelModal extends StatelessWidget {
 
     if (result == null) return;
 
+    // Load existing volunteers ONCE
+    final existingVolunteers = await repo.getAllVolunteers();
+
+    final existingKeys = <String>{
+      for (final v in existingVolunteers)
+        _key(v.firstName, v.lastName),
+    };
+
     final file = File(result.files.single.path!);
     final bytes = file.readAsBytesSync();
     final excel = Excel.decodeBytes(bytes);
 
     int importedCount = 0;
+    int skippedCount = 0;
 
     for (final sheet in excel.tables.keys) {
       final rows = excel.tables[sheet]!.rows;
 
-      // Skip header row (row 0)
+      // Skip header row
       for (int i = 1; i < rows.length; i++) {
         final row = rows[i];
-
         if (row.isEmpty) continue;
 
+        final firstName = row[0]?.value.toString() ?? '';
+        final lastName = row[1]?.value.toString() ?? '';
+
+        // Skip invalid rows
+        if (firstName.isEmpty || lastName.isEmpty) {
+          skippedCount++;
+          continue;
+        }
+
+        final key = _key(firstName, lastName);
+
+        // Skip duplicates
+        if (existingKeys.contains(key)) {
+          skippedCount++;
+          continue;
+        }
+
         final volunteer = Volunteer(
-          firstName: row[0]?.value.toString() ?? '',
-          lastName: row[1]?.value.toString() ?? '',
-          nickname: row[2]?.value?.toString().isEmpty ?? true
+          firstName: firstName,
+          lastName: lastName,
+          nickname: row[2]?.value?.toString().trim().isEmpty ?? true
               ? null
               : row[2]!.value.toString(),
           age: int.tryParse(row[3]?.value.toString() ?? '0') ?? 0,
@@ -54,6 +83,7 @@ class AddVolunteerExcelModal extends StatelessWidget {
         );
 
         await repo.createVolunteer(volunteer);
+        existingKeys.add(key); // prevent duplicates inside same file
         importedCount++;
       }
     }
@@ -62,7 +92,11 @@ class AddVolunteerExcelModal extends StatelessWidget {
     onVolunteersAdded();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$importedCount volunteers imported')),
+      SnackBar(
+        content: Text(
+          '$importedCount imported, $skippedCount skipped (duplicates or invalid)',
+        ),
+      ),
     );
   }
 
