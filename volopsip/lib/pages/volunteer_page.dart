@@ -7,6 +7,7 @@ import 'package:volopsip/modal/filter_volunteer_modal.dart';
 import 'package:volopsip/helpers/volunteer_page/list_item.dart';
 import 'package:provider/provider.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
+import 'package:volopsip/modal/volunteer_pdf_export_modal.dart';
 
 
 class VolunteerPage extends StatefulWidget {
@@ -114,6 +115,24 @@ class _VolunteerPageState extends State<VolunteerPage> {
             icon: const Icon(Icons.filter_list),
             tooltip: 'Filter',
             onPressed: _openFilterModal,
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export PDF',
+            onPressed: () {
+              final provider = context.read<VolunteerProvider>();
+
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => VolunteerPdfExportModal(
+                  volunteers: provider.volunteers, // 🔑 already filtered
+                  volunteerTypeFilter: provider.filterVolunteerType,
+                  departmentFilter: provider.filterDepartments,
+                ),
+              );
+            },
           ),
         ],
       ),
