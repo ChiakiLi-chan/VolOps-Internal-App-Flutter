@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/pdf/event_pdf_filter.dart';
+import '../helpers/pdf/event_pdf_sort.dart';
 
 class EventPdfFilterModal extends StatefulWidget {
   final EventPdfFilter initialFilter;
@@ -18,8 +19,8 @@ class EventPdfFilterModal extends StatefulWidget {
 class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
   String? _volunteerType;
   late Set<String> _departments;
+  late EventPdfSortType _sortType;
 
-  // ✅ FIXED department list
   static const List<String> _allDepartments = [
     'Finance',
     'Marketing',
@@ -35,36 +36,27 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
     super.initState();
     _volunteerType = widget.initialFilter.volunteerType;
     _departments = {...widget.initialFilter.departments};
+    _sortType = widget.initialFilter.sortType;
   }
 
   Widget _buildVolunteerTypeColumn() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Volunteer Type',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-
+        const Text('Volunteer Type',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         CheckboxListTile(
           title: const Text('Core'),
           value: _volunteerType == 'Core',
-          onChanged: (checked) {
-            setState(() {
-              _volunteerType = checked == true ? 'Core' : null;
-            });
-          },
+          onChanged: (v) =>
+              setState(() => _volunteerType = v == true ? 'Core' : null),
           dense: true,
         ),
-
         CheckboxListTile(
           title: const Text('OTD'),
           value: _volunteerType == 'OTD',
-          onChanged: (checked) {
-            setState(() {
-              _volunteerType = checked == true ? 'OTD' : null;
-            });
-          },
+          onChanged: (v) =>
+              setState(() => _volunteerType = v == true ? 'OTD' : null),
           dense: true,
         ),
       ],
@@ -75,24 +67,50 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Departments',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-
+        const Text('Departments',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ..._allDepartments.map(
           (dept) => CheckboxListTile(
             title: Text(dept),
             value: _departments.contains(dept),
-            onChanged: (checked) {
-              setState(() {
-                checked == true
-                    ? _departments.add(dept)
-                    : _departments.remove(dept);
-              });
-            },
+            onChanged: (v) => setState(() =>
+                v == true ? _departments.add(dept) : _departments.remove(dept)),
             dense: true,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Sort By',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        RadioListTile(
+          title: const Text('Alphabetical'),
+          value: EventPdfSortType.alphabetical,
+          groupValue: _sortType,
+          onChanged: (v) => setState(() => _sortType = v!),
+        ),
+        RadioListTile(
+          title: const Text('Status'),
+          value: EventPdfSortType.status,
+          groupValue: _sortType,
+          onChanged: (v) => setState(() => _sortType = v!),
+        ),
+        RadioListTile(
+          title: const Text('Department'),
+          value: EventPdfSortType.department,
+          groupValue: _sortType,
+          onChanged: (v) => setState(() => _sortType = v!),
+        ),
+        RadioListTile(
+          title: const Text('Volunteer Type'),
+          value: EventPdfSortType.volunteerType,
+          groupValue: _sortType,
+          onChanged: (v) => setState(() => _sortType = v!),
         ),
       ],
     );
@@ -104,12 +122,9 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'PDF Export Filters',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            const Text('PDF Export Filters',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
 
             Row(
@@ -120,6 +135,9 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
                 Expanded(child: _buildDepartmentColumn()),
               ],
             ),
+
+            const SizedBox(height: 16),
+            _buildSortSection(),
 
             const SizedBox(height: 24),
 
@@ -143,6 +161,7 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
                         EventPdfFilter(
                           volunteerType: _volunteerType,
                           departments: _departments,
+                          sortType: _sortType,
                         ),
                       );
                       Navigator.pop(context);
