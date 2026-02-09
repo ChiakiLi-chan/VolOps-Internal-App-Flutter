@@ -7,6 +7,7 @@ import '../../models/events.dart';
 import '../../models/event_assignment.dart';
 import '../../models/volunteer.dart';
 import 'event_pdf_filter.dart';
+import 'event_pdf_sort.dart';
 import '../../repo/volunteer_repo.dart';
 
 class EventPdfExporter {
@@ -41,6 +42,26 @@ class EventPdfExporter {
       return appliedFilter.matches(v);
     }).toList();
 
+    // 🔑 APPLY SORTING
+filteredVolunteers.sort((a, b) {
+  switch (appliedFilter.sortType) {
+    case EventPdfSortType.status:
+      final sa = assignmentStatusByVolunteerId[a.id!] ?? 'Unassigned';
+      final sb = assignmentStatusByVolunteerId[b.id!] ?? 'Unassigned';
+      return sa.compareTo(sb);
+
+    case EventPdfSortType.department:
+      return a.department.compareTo(b.department);
+
+    case EventPdfSortType.volunteerType:
+      return a.volunteerType.compareTo(b.volunteerType);
+
+    case EventPdfSortType.alphabetical:
+    default:
+      return a.fullName.toLowerCase()
+        .compareTo(b.fullName.toLowerCase());
+  }
+});
 
     pdf.addPage(
       pw.Page(
