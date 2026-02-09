@@ -5,7 +5,7 @@ import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/repo/volunteer_repo.dart';
 import 'package:volopsip/repo/events_repo.dart';
 import 'package:volopsip/helpers/events_page/additional_volunteers_to_event.dart';
-
+import 'package:volopsip/modal/event_scanning.dart';
 class EventDetailsModal extends StatefulWidget {
   final Event event;
   final List<EventAssignment> assignments;
@@ -186,15 +186,36 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
-                  title: Text(attr, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  trailing: editMode
-                      ? IconButton(
+                  title: Text(
+                    attr,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Scan button (always visible)
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_scanner),
+                        tooltip: 'Scan QR',
+                        onPressed: () {
+                          eventScanning(
+                            context: context,
+                            attribute: attr,
+                            eventName: widget.event.name,
+                          );
+                        },
+                      ),
+
+                      // Move button (edit mode only)
+                      if (editMode)
+                        IconButton(
                           icon: const Icon(Icons.drive_file_move, color: Colors.blue),
                           onPressed: selectedVolunteerIds.isEmpty
                               ? null
                               : () => _moveSelectedVolunteers(attr),
-                        )
-                      : null,
+                        ),
+                    ],
+                  ),
                 ),
                 ...assignments.map((a) {
                   final selected = selectedVolunteerIds.contains(a.volunteerId);
