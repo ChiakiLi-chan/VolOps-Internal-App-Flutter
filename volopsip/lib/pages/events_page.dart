@@ -7,6 +7,7 @@ import 'package:volopsip/helpers/events_page/list_event.dart';
 import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/helpers/listeners/event_notifier.dart';
 import 'package:volopsip/repo/volunteer_repo.dart';
+import 'package:volopsip/helpers/events_page/events_details.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -167,13 +168,29 @@ class _EventsPageState extends State<EventsPage> {
           volunteerAssignmentsByEvent: volunteerAssignmentsByEvent,
           allVolunteers: allVolunteers,
           selectedEventIds: _selectedEventIds,
+
+          // ✅ TAP
           onTapEvent: (event) {
             if (_isSelectionMode) {
               _toggleSelection(event);
+            } else {
+              showDialog(
+                context: context,
+                builder: (_) => Dialog(
+                  insetPadding: const EdgeInsets.all(20),
+                  child: EventDetailsModal(
+                    event: event,
+                    assignments: volunteerAssignmentsByEvent[event.id!] ?? [],
+                    volunteers: allVolunteers,
+                    onUpdated: fetchEventsAndAssignments,
+                  ),
+                ),
+              );
             }
           },
+
+          // ✅ LONG PRESS (THIS WAS MISSING)
           onLongPressEvent: _toggleSelection,
-          onUpdated: fetchEventsAndAssignments,
         ),
       ),
     );
