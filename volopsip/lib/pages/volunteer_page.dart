@@ -151,7 +151,8 @@ class _VolunteerPageState extends State<VolunteerPage> {
               ]
             : [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 8.0),
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -200,10 +201,10 @@ class _VolunteerPageState extends State<VolunteerPage> {
                   child: GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.8,
+                      crossAxisCount: 8,      // 8 cards per row → smaller width
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.75,  // keeps height proportional
                     ),
                     itemCount: provider.volunteers.length,
                     itemBuilder: (context, index) {
@@ -217,7 +218,6 @@ class _VolunteerPageState extends State<VolunteerPage> {
                           if (_isSelectionMode) {
                             _toggleSelection(v);
                           } else {
-                            // ✅ open details when not selecting
                             showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
