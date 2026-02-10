@@ -22,6 +22,9 @@ class _EventsPageState extends State<EventsPage> {
   List<Event> events = [];
   Map<int, List<EventAssignment>> volunteerAssignmentsByEvent = {};
 
+  final Set<int> _selectedEventIds = {};
+  bool get _isSelectionMode => _selectedEventIds.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +70,51 @@ class _EventsPageState extends State<EventsPage> {
     });
   }
 
+  void _toggleSelection(Event event) {
+    setState(() {
+      if (_selectedEventIds.contains(event.id)) {
+        _selectedEventIds.remove(event.id);
+      } else {
+        _selectedEventIds.add(event.id!);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedEvents() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Events'),
+        content: Text(
+          'Delete ${_selectedEventIds.length} selected events?\n\n'
+          'All assignments under these events will also be removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    for (final id in _selectedEventIds) {
+      await _repo.deleteEvent(id);
+    }
+
+    setState(() => _selectedEventIds.clear());
+    fetchEventsAndAssignments();
+  }
+
   /// Open bottom sheet to add a new event
   void _showAddEventModal() {
     showModalBottomSheet(
@@ -78,31 +126,55 @@ class _EventsPageState extends State<EventsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Add Event button
-          Row(
-            children: [
-              const Spacer(),
-              ElevatedButton(
-                onPressed: _showAddEventModal,
-                child: const Text('Add Event'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Use the new helper widget for the event list
-          Expanded(
-            child: EventList(
-              events: events,
-              volunteerAssignmentsByEvent: volunteerAssignmentsByEvent,
-              allVolunteers: allVolunteers,
-              onUpdated: fetchEventsAndAssignments,
-            ),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _isSelectionMode
+              ? '${_selectedEventIds.length} selected'
+              : 'Events',
+        ),
+        leading: _isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() => _selectedEventIds.clear());
+                },
+              )
+            : null,
+        actions: _isSelectionMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: _deleteSelectedEvents,
+                ),
+              ]
+            : [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _showAddEventModal,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Event'),
+                ),
+              ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: EventList(
+          events: events,
+          volunteerAssignmentsByEvent: volunteerAssignmentsByEvent,
+          allVolunteers: allVolunteers,
+          selectedEventIds: _selectedEventIds,
+          onTapEvent: (event) {
+            if (_isSelectionMode) {
+              _toggleSelection(event);
+            }
+          },
+          onLongPressEvent: _toggleSelection,
+          onUpdated: fetchEventsAndAssignments,
+        ),
       ),
     );
   }

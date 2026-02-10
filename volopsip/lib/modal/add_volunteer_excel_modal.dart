@@ -21,7 +21,6 @@ class AddVolunteerExcelModal extends StatelessWidget {
   Future<void> _importExcel(BuildContext context) async {
     final repo = VolunteerRepository();
 
-    // Pick XLSX file
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx'],
@@ -29,7 +28,6 @@ class AddVolunteerExcelModal extends StatelessWidget {
 
     if (result == null) return;
 
-    // Load existing volunteers ONCE
     final existingVolunteers = await repo.getAllVolunteers();
 
     final existingKeys = <String>{
@@ -47,15 +45,13 @@ class AddVolunteerExcelModal extends StatelessWidget {
     for (final sheet in excel.tables.keys) {
       final rows = excel.tables[sheet]!.rows;
 
-      // Skip header row
       for (int i = 1; i < rows.length; i++) {
         final row = rows[i];
         if (row.isEmpty) continue;
 
-        final firstName = row[0]?.value.toString() ?? '';
-        final lastName = row[1]?.value.toString() ?? '';
+        final firstName = row[0]?.value.toString().trim() ?? '';
+        final lastName = row[1]?.value.toString().trim() ?? '';
 
-        // Skip invalid rows
         if (firstName.isEmpty || lastName.isEmpty) {
           skippedCount++;
           continue;
@@ -63,27 +59,34 @@ class AddVolunteerExcelModal extends StatelessWidget {
 
         final key = _key(firstName, lastName);
 
-        // Skip duplicates
         if (existingKeys.contains(key)) {
           skippedCount++;
           continue;
         }
+
+        // ✅ NEW: Image URL (Cloudinary or any direct image URL)
+        final imageUrl = row.length > 8
+            ? row[8]?.value?.toString().trim()
+            : null;
 
         final volunteer = Volunteer(
           firstName: firstName,
           lastName: lastName,
           nickname: row[2]?.value?.toString().trim().isEmpty ?? true
               ? null
-              : row[2]!.value.toString(),
+              : row[2]!.value.toString().trim(),
           age: int.tryParse(row[3]?.value.toString() ?? '0') ?? 0,
-          email: row[4]?.value.toString() ?? '',
-          contactNumber: row[5]?.value.toString() ?? '',
-          volunteerType: row[6]?.value.toString() ?? 'OTD',
-          department: row[7]?.value.toString() ?? '',
+          email: row[4]?.value.toString().trim() ?? '',
+          contactNumber: row[5]?.value.toString().trim() ?? '',
+          volunteerType: row[6]?.value.toString().trim() ?? 'OTD',
+          department: row[7]?.value.toString().trim() ?? '',
+          photoPath: imageUrl != null && imageUrl.isNotEmpty
+              ? imageUrl
+              : null,
         );
 
         await repo.createVolunteer(volunteer);
-        existingKeys.add(key); // prevent duplicates inside same file
+        existingKeys.add(key);
         importedCount++;
       }
     }

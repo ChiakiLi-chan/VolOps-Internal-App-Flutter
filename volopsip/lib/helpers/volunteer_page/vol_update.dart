@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:volopsip/models/volunteer.dart';
+import 'package:file_picker/file_picker.dart';
 
 class EditVolunteerForm extends StatefulWidget {
   final Volunteer volunteer;
@@ -23,9 +25,12 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
   late TextEditingController _ageController;
   late TextEditingController _emailController;
   late TextEditingController _contactController;
+  late TextEditingController _imageLinkController;
 
   late String volunteerType;
   late String department;
+
+  String? _localImagePath;
 
   @override
   void initState() {
@@ -36,7 +41,14 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
     _ageController = TextEditingController(text: widget.volunteer.age.toString());
     _emailController = TextEditingController(text: widget.volunteer.email);
     _contactController = TextEditingController(text: widget.volunteer.contactNumber);
+    _imageLinkController = TextEditingController(
+      text: widget.volunteer.photoPath?.startsWith('http') == true ? widget.volunteer.photoPath : '',
+    );
     volunteerType = widget.volunteer.volunteerType;
+    department = widget.volunteer.department;
+    if (widget.volunteer.photoPath != null && !widget.volunteer.photoPath!.startsWith('http')) {
+      _localImagePath = widget.volunteer.photoPath;
+    }
   }
 
   @override
@@ -47,7 +59,40 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
     _ageController.dispose();
     _emailController.dispose();
     _contactController.dispose();
+    _imageLinkController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickLocalImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _localImagePath = result.files.single.path!;
+        _imageLinkController.clear();
+      });
+    }
+  }
+
+  String? get _finalPhotoPath {
+    if (_localImagePath != null) return _localImagePath;
+    if (_imageLinkController.text.trim().isNotEmpty) {
+      return _imageLinkController.text.trim();
+    }
+    return null;
+  }
+
+  Widget _buildImagePreview() {
+    final path = _finalPhotoPath;
+
+    if (path == null || path.isEmpty) {
+      return const Icon(Icons.person, size: 60, color: Colors.white);
+    }
+
+    if (path.startsWith('http')) {
+      return Image.network(path, fit: BoxFit.cover);
+    }
+
+    return Image.file(File(path), fit: BoxFit.cover);
   }
 
   @override
@@ -57,6 +102,46 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          /// IMAGE PREVIEW
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _buildImagePreview(),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Pick Image'),
+                onPressed: _pickLocalImage,
+              ),
+            ],
+          ),
+
+          /// IMAGE LINK (Cloudinary)
+          TextFormField(
+            controller: _imageLinkController,
+            decoration: const InputDecoration(
+              labelText: 'Image Link (Cloudinary / optional)',
+            ),
+            onChanged: (_) {
+              if (_imageLinkController.text.isNotEmpty) {
+                setState(() => _localImagePath = null);
+              }
+            },
+          ),
+
+          const Divider(height: 32),
           TextFormField(
             controller: _firstNameController,
             decoration: const InputDecoration(labelText: 'First Name'),
@@ -127,6 +212,7 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
                   contactNumber: _contactController.text.trim(),
                   volunteerType: volunteerType,
                   department:  department,
+                  photoPath: _finalPhotoPath,
                 );
                 widget.onSave(updatedVolunteer);
               }
