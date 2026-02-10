@@ -137,8 +137,10 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Show Add button only if NOT in edit mode
+              if (!editMode)
                 IconButton(
                   icon: const Icon(Icons.person_add_alt_1, color: Colors.green),
                   onPressed: () async {
@@ -155,27 +157,52 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
                           widget.assignments.clear();
                           widget.assignments.addAll(
                               updatedAssignments.where((a) => a.eventId == widget.event.id));
-
                           _groupAssignments();
                           setState(() {});
-
                           if (widget.onUpdated != null) await widget.onUpdated!();
                         },
                       ),
                     );
                   },
                 ),
+
+              // Show Delete button only in edit mode
+              if (editMode)
                 IconButton(
-                  icon: Icon(editMode ? Icons.close : Icons.edit),
-                  onPressed: () {
-                    setState(() {
-                      editMode = !editMode;
-                      if (!editMode) selectedVolunteerIds.clear();
-                    });
-                  },
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  onPressed: selectedVolunteerIds.isEmpty
+                      ? null
+                      : () async {
+                          // Delete the selected volunteers' assignments
+                          for (var id in selectedVolunteerIds) {
+                            await EventRepository().deleteAssignment(id, widget.event.id!);
+                          }
+                          // Remove from local state
+                          widget.assignments.removeWhere(
+                              (a) => selectedVolunteerIds.contains(a.volunteerId));
+                          selectedVolunteerIds.clear();
+                          _groupAssignments();
+                          setState(() {
+                            editMode = false; // optionally exit edit mode
+                          });
+
+                          if (widget.onUpdated != null) await widget.onUpdated!();
+                        },
                 ),
-              ],
-            ),
+
+    // Edit/close toggle
+    IconButton(
+      icon: Icon(editMode ? Icons.close : Icons.edit),
+      onPressed: () {
+        setState(() {
+          editMode = !editMode;
+          if (!editMode) selectedVolunteerIds.clear();
+        });
+      },
+    ),
+  ],
+),
+
           ),
           const Divider(),
           // Attributes & Volunteers
