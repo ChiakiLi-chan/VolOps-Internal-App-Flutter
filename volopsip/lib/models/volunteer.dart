@@ -11,7 +11,8 @@ class Volunteer {
   final String email;
   final String contactNumber;
   final String volunteerType;
-  final String department; 
+  final String department;
+  final String? photoPath; 
 
   Volunteer({
     this.id,
@@ -24,6 +25,7 @@ class Volunteer {
     required this.contactNumber,
     required this.volunteerType,
     required this.department,
+    this.photoPath
   }) : uuid = uuid ?? 'VQROF2026-${_uuid.v4()}';
 
   Map<String, dynamic> toMap() {
@@ -38,6 +40,7 @@ class Volunteer {
       'contact_number': contactNumber,
       'volunteer_type': volunteerType,
       'department': department,
+      'photo_path':photoPath
     };
   }
 
@@ -53,6 +56,7 @@ class Volunteer {
       contactNumber: map['contact_number'],
       volunteerType: map['volunteer_type'],
       department: map['department'],
+      photoPath: map['photo_path'],
     );
   }
 
