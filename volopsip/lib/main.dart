@@ -75,12 +75,6 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            'build/flutter_assets/VIPLogo.png', // path relative to project root
-            width: 500, // adjust as needed
-            height: 500,
-            fit: BoxFit.contain,
-          ),
           const SizedBox(height: 20),
           const Text(
             'Welcome!',
