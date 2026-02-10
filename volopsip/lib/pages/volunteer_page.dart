@@ -9,6 +9,7 @@ import 'package:volopsip/modal/filter_volunteer_modal.dart';
 import 'package:volopsip/helpers/volunteer_page/list_item.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
 import 'package:volopsip/modal/volunteer_pdf_export_modal.dart';
+import 'package:volopsip/helpers/volunteer_page/vol_details.dart';
 
 class VolunteerPage extends StatefulWidget {
   const VolunteerPage({super.key});
@@ -215,6 +216,16 @@ class _VolunteerPageState extends State<VolunteerPage> {
                         onTap: () {
                           if (_isSelectionMode) {
                             _toggleSelection(v);
+                          } else {
+                            // ✅ open details when not selecting
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => VolunteerDetailsModal(
+                                volunteer: v,
+                                onVolunteerUpdated: provider.refresh,
+                              ),
+                            );
                           }
                         },
                         onLongPress: () => _toggleSelection(v),
