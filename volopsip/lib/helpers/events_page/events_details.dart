@@ -198,15 +198,34 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
                       IconButton(
                         icon: const Icon(Icons.qr_code_scanner),
                         tooltip: 'Scan QR',
-                        onPressed: () {
+                        onPressed: () async {
                           PersistentWebSocketServer().sendToPhone(
                             'ES-${widget.event.id}-$attr-${widget.event.name}',
                           );
-                          eventScanning(
+
+                          // Open scanning dialog
+                          await eventScanning(
                             context: context,
                             attribute: attr,
                             eventName: widget.event.name,
                           );
+
+                          // Fetch updated assignments for this event (just like manual move)
+                          final updatedAssignments = await EventRepository().getAllEventAssignments();
+                          widget.assignments.clear();
+                          widget.assignments.addAll(
+                              updatedAssignments.where((a) => a.eventId == widget.event.id));
+
+                          // Re-group by attributes
+                          _groupAssignments();
+
+                          // Rebuild this parent UI
+                          setState(() {});
+
+                          // Also notify grandparent to refresh
+                          if (widget.onUpdated != null) {
+                            await widget.onUpdated!();
+                          }
                         },
                       ),
 

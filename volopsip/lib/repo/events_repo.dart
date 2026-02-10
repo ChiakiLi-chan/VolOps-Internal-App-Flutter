@@ -94,6 +94,24 @@ class EventRepository {
     );
   }
 
+  /// Get a single event by its ID
+  Future<Event?> getEventById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'events',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return Event.fromMap(maps.first);
+    } else {
+      return null; // not found
+    }
+  }
+
+
 
     /// Add a single volunteer to an event with attribute
   Future<void> addVolunteerToEventWithAttribute(

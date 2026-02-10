@@ -55,7 +55,11 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
               final qrData = parts.sublist(2).join('-');
 
               // Call helper to show alert dialog
-              ESAdding.showEsAddDialog(context, eventAttr, eventId, qrData);
+              ESAdding.processQr(
+                eventAttr: eventAttr,
+                eventId: eventId,
+                qrData: qrData,
+              );
             } else {
               debugPrint('Invalid ESADD message: $msg');
             }
