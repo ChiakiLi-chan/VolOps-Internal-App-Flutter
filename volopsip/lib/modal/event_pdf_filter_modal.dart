@@ -5,10 +5,12 @@ import '../helpers/pdf/event_pdf_sort.dart';
 class EventPdfFilterModal extends StatefulWidget {
   final EventPdfFilter initialFilter;
   final void Function(EventPdfFilter filter) onApply;
+  final List<String> eventAttributes; // ✅ NEW
 
   const EventPdfFilterModal({
     super.key,
     required this.initialFilter,
+    required this.eventAttributes, // ✅ NEW
     required this.onApply,
   });
 
@@ -20,6 +22,7 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
   String? _volunteerType;
   late Set<String> _departments;
   late EventPdfSortType _sortType;
+  late Set<String> _attributes;
 
   static const List<String> _allDepartments = [
     'Finance',
@@ -37,9 +40,41 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
     _volunteerType = widget.initialFilter.volunteerType;
     _departments = {...widget.initialFilter.departments};
     _sortType = widget.initialFilter.sortType;
+    _attributes = {...widget.initialFilter.attributes};
   }
 
+  Widget _buildAttributeColumn() {
+  if (widget.eventAttributes.isEmpty) {
+    return const SizedBox();
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Event Status',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      ...widget.eventAttributes.map(
+        (attr) => CheckboxListTile(
+          title: Text(attr),
+          value: _attributes.contains(attr),
+          onChanged: (v) {
+            setState(() {
+              v == true ? _attributes.add(attr) : _attributes.remove(attr);
+            });
+          },
+          dense: true,
+        ),
+      ),
+    ],
+  );
+}
+
   Widget _buildVolunteerTypeColumn() {
+    if (widget.eventAttributes.isEmpty) {
+    return const SizedBox();
+  }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -116,6 +151,8 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
     );
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -133,6 +170,8 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
                 Expanded(child: _buildVolunteerTypeColumn()),
                 const SizedBox(width: 16),
                 Expanded(child: _buildDepartmentColumn()),
+                const SizedBox(height: 16),
+                Expanded(child:_buildAttributeColumn()),
               ],
             ),
 
@@ -161,6 +200,7 @@ class _EventPdfFilterModalState extends State<EventPdfFilterModal> {
                         EventPdfFilter(
                           volunteerType: _volunteerType,
                           departments: _departments,
+                          attributes: _attributes, // ✅ NEW
                           sortType: _sortType,
                         ),
                       );

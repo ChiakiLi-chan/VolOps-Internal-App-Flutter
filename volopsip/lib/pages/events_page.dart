@@ -173,7 +173,9 @@ class _EventsPageState extends State<EventsPage> {
           onTapEvent: (event) {
             if (_isSelectionMode) {
               _toggleSelection(event);
-            } else {
+            }
+            // 🔑 Defer dialog opening to next frame
+            WidgetsBinding.instance.addPostFrameCallback((_) {
               showDialog(
                 context: context,
                 builder: (_) => Dialog(
@@ -186,7 +188,7 @@ class _EventsPageState extends State<EventsPage> {
                   ),
                 ),
               );
-            }
+            });
           },
 
           // ✅ LONG PRESS (THIS WAS MISSING)

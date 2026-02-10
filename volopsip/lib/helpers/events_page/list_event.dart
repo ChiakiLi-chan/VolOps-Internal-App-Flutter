@@ -81,6 +81,7 @@ class EventList extends StatelessWidget {
                         isScrollControlled: true,
                         builder: (_) => EventPdfFilterModal(
                           initialFilter: const EventPdfFilter(),
+                          eventAttributes: event.attributes, // ✅ HERE
                           onApply: (filter) async {
                             await EventPdfExporter.export(
                               event: event,
@@ -94,33 +95,7 @@ class EventList extends StatelessWidget {
                   ),
 
             // ✅ SINGLE, CORRECT TAP HANDLER
-            onTap: () {
-              if (onTapEvent != null) {
-                onTapEvent!(event);
-              } else {
-                showDialog(
-                  context: context,
-                  builder: (_) => Dialog(
-                    insetPadding: const EdgeInsets.all(20),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight:
-                            MediaQuery.of(context).size.height * 0.8,
-                        maxWidth: 500,
-                      ),
-                      child: SingleChildScrollView(
-                        child: EventDetailsModal(
-                          event: event,
-                          assignments: eventAssignments,
-                          volunteers: allVolunteers,
-                          onUpdated: onUpdated,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }
-            },
+            onTap: () => onTapEvent?.call(event),
 
             // ✅ SINGLE, CORRECT LONG PRESS
             onLongPress: onLongPressEvent != null
