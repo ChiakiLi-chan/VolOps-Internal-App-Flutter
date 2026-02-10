@@ -5,11 +5,17 @@ import 'package:volopsip/helpers/volunteer_page/vol_details.dart'; // make sure 
 
 class VolunteerListItem extends StatelessWidget {
   final Volunteer volunteer;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback? onVolunteerUpdated; // now optional
 
   const VolunteerListItem({
     super.key,
     required this.volunteer,
+    required this.isSelected,
+    this.onTap,
+    this.onLongPress,
     this.onVolunteerUpdated, // optional
   });
 
@@ -72,23 +78,50 @@ class VolunteerListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showDetails(context),
-      child: Column(
+      onTap: onTap ?? () => _showDetails(context),
+      onLongPress: onLongPress,
+      child: Stack(
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(8),
+          Column(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildAvatar(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                volunteer.fullName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+
+          /// ✅ Selection overlay
+          if (isSelected)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
             ),
-            child: _buildAvatar(), // ✅ THIS WAS THE MISSING PART
-          ),
-          const SizedBox(height: 8),
-          Text(
-            volunteer.fullName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
         ],
       ),
     );

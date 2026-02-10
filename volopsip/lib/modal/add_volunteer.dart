@@ -62,7 +62,9 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
     }
     return null;
   }
-
+  String _key(String firstName, String lastName) {
+    return '${firstName.trim().toLowerCase()}|${lastName.trim().toLowerCase()}';
+  }
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -207,28 +209,51 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
               ElevatedButton(
                 child: const Text('Add Volunteer'),
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final newVolunteer = Volunteer(
-                      //uuid: const Uuid().v4(),
-                      firstName: _firstNameController.text.trim(),
-                      lastName: _lastNameController.text.trim(),
-                      nickname: _nicknameController.text.trim().isEmpty
-                          ? null
-                          : _nicknameController.text.trim(),
-                      age: int.parse(_ageController.text.trim()),
-                      email: _emailController.text.trim(),
-                      contactNumber: _contactController.text.trim(),
-                      volunteerType: volunteerType,
-                      department: department,
-                      photoPath: _finalPhotoPath, 
+                  if (!_formKey.currentState!.validate()) return;
+
+                  final firstName = _firstNameController.text.trim();
+                  final lastName = _lastNameController.text.trim();
+
+                  // 🔍 Check for duplicates
+                  final existingVolunteers = await _repo.getAllVolunteers();
+                  final newKey = _key(firstName, lastName);
+
+                  final isDuplicate = existingVolunteers.any(
+                    (v) => _key(v.firstName, v.lastName) == newKey,
+                  );
+
+                  if (isDuplicate) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Volunteer already exists (same first and last name)',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
                     );
+                    return; // ❌ stop here
+                  }
+
+                  // ✅ Safe to create
+                  final newVolunteer = Volunteer(
+                    firstName: firstName,
+                    lastName: lastName,
+                    nickname: _nicknameController.text.trim().isEmpty
+                        ? null
+                        : _nicknameController.text.trim(),
+                    age: int.parse(_ageController.text.trim()),
+                    email: _emailController.text.trim(),
+                    contactNumber: _contactController.text.trim(),
+                    volunteerType: volunteerType,
+                    department: department,
+                    photoPath: _finalPhotoPath,
+                  );
 
                     await _repo.createVolunteer(newVolunteer);
 
                     Navigator.pop(context); // close modal
                     widget.onVolunteerAdded(); // refresh parent list
-                  }
-                },
+                  },
               ),
               const SizedBox(height: 16),
             ],
