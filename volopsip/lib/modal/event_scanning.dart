@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:volopsip/helpers/events_page/log_manager.dart';
 import 'dart:async';
+import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';  
 
 Future<void> eventScanning({
   required BuildContext context,
@@ -95,6 +96,9 @@ Future<void> eventScanning({
                   TextButton(
                     onPressed: () {
                       subscription?.cancel(); // ✅ cancel exactly one listener
+                      PersistentWebSocketServer().sendToPhone(
+                            'STOPES',
+                      );
                       Navigator.of(context).pop(true);
                     },
                     child: const Text(

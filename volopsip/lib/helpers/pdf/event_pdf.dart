@@ -15,6 +15,30 @@ class EventPdfExporter {
     return name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   }
 
+  static String formatTimestamp(DateTime? ts) {
+    if (ts == null) return '';
+    final months = [
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    final monthName = months[ts.month];
+    final hour12 = ts.hour == 0 ? 12 : ts.hour > 12 ? ts.hour - 12 : ts.hour;
+    final ampm = ts.hour >= 12 ? 'PM' : 'AM';
+    final minuteStr = ts.minute.toString().padLeft(2, '0');
+    return '$monthName ${ts.day}, ${ts.year} $hour12:$minuteStr$ampm';
+  }
+
   static Future<void> export({
     required Event event,
     required List<EventAssignment> assignments,
@@ -23,78 +47,70 @@ class EventPdfExporter {
     final pdf = pw.Document();
     final appliedFilter = filter ?? const EventPdfFilter();
 
-    // 🔑 ALWAYS load volunteers from DB
+    // Load all volunteers
     final volunteerRepo = VolunteerRepository();
     final volunteers = await volunteerRepo.getAllVolunteers();
 
-    print('PDF EXPORT DEBUG');
-    print('Volunteers loaded from DB: ${volunteers.length}');
-    print('Assignments passed in: ${assignments.length}');
-
-    final Map<int, String> assignmentStatusByVolunteerId = {
-      for (final a in assignments)
-        a.volunteerId:
-            a.attribute.isNotEmpty ? a.attribute : 'Unassigned',
+    // Map volunteerId → assignment (for this event)
+    final Map<int, EventAssignment> assignmentByVolunteerId = {
+      for (final a in assignments) a.volunteerId: a
     };
 
+    // Only include volunteers assigned to this event
+    final assignedVolunteerIds = assignmentByVolunteerId.keys.toSet();
+
+    // Apply filters
     final filteredVolunteers = volunteers.where((v) {
       if (v.id == null) return false;
-
-      // Volunteer-level filters
+      if (!assignedVolunteerIds.contains(v.id!)) return false; // <-- only assigned
       if (!appliedFilter.matches(v)) return false;
 
-      // 🔑 Attribute filter (EVENT-SPECIFIC)
       if (appliedFilter.attributes.isNotEmpty) {
-        final status =
-            assignmentStatusByVolunteerId[v.id!] ?? 'Unassigned';
-
-        if (!appliedFilter.attributes.contains(status)) {
-          return false;
-        }
+        final status = assignmentByVolunteerId[v.id!]?.attribute.isNotEmpty == true
+            ? assignmentByVolunteerId[v.id!]!.attribute
+            : 'Unassigned';
+        if (!appliedFilter.attributes.contains(status)) return false;
       }
 
       return true;
     }).toList();
 
-    // 🔑 APPLY SORTING
-filteredVolunteers.sort((a, b) {
-  switch (appliedFilter.sortType) {
-    case EventPdfSortType.status:
-      final sa = assignmentStatusByVolunteerId[a.id!] ?? 'Unassigned';
-      final sb = assignmentStatusByVolunteerId[b.id!] ?? 'Unassigned';
-      return sa.compareTo(sb);
+    // Apply sorting
+    filteredVolunteers.sort((a, b) {
+      switch (appliedFilter.sortType) {
+        case EventPdfSortType.status:
+          final sa = assignmentByVolunteerId[a.id!]?.attribute.isNotEmpty == true
+              ? assignmentByVolunteerId[a.id!]!.attribute
+              : 'Unassigned';
+          final sb = assignmentByVolunteerId[b.id!]?.attribute.isNotEmpty == true
+              ? assignmentByVolunteerId[b.id!]!.attribute
+              : 'Unassigned';
+          return sa.compareTo(sb);
 
-    case EventPdfSortType.department:
-      return a.department.compareTo(b.department);
+        case EventPdfSortType.department:
+          return a.department.compareTo(b.department);
 
-    case EventPdfSortType.volunteerType:
-      return a.volunteerType.compareTo(b.volunteerType);
+        case EventPdfSortType.volunteerType:
+          return a.volunteerType.compareTo(b.volunteerType);
 
-    case EventPdfSortType.alphabetical:
-    default:
-      return a.fullName.toLowerCase()
-        .compareTo(b.fullName.toLowerCase());
-  }
-});
+        case EventPdfSortType.alphabetical:
+        default:
+          return a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+      }
+    });
 
+    // Build PDF page
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            // Event title
             pw.Text(
               event.name,
-              style: pw.TextStyle(
-                fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
-
             pw.SizedBox(height: 12),
-
-            // Filter summary
             pw.Text(
               'Filters Applied:',
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -108,43 +124,39 @@ filteredVolunteers.sort((a, b) {
                       if (appliedFilter.departments.isNotEmpty)
                         'Departments: ${appliedFilter.departments.join(', ')}',
                       if (appliedFilter.attributes.isNotEmpty)
-                        'Status: ${appliedFilter.attributes.join(', ')}',   
+                        'Status: ${appliedFilter.attributes.join(', ')}',
                     ].join(' | '),
             ),
-
             pw.SizedBox(height: 20),
-
             pw.Text(
               'Volunteers',
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 8),
-
-            // 🔑 STEP 2: SHOW RESULT
             if (filteredVolunteers.isEmpty)
               pw.Text(
                 'No volunteers match the selected filters.',
-                style: pw.TextStyle(
-                  fontStyle: pw.FontStyle.italic,
-                  color: PdfColors.grey700,
-                ),
+                style: pw.TextStyle(fontStyle: pw.FontStyle.italic, color: PdfColors.grey700),
               )
             else
               pw.Table.fromTextArray(
                 headers: const [
+                  'Last Modified',
                   'Name',
                   'Volunteer Type',
                   'Department',
                   'Status',
                 ],
                 data: filteredVolunteers.map((v) {
-                  final status =
-                      assignmentStatusByVolunteerId[v.id!] ?? 'Unassigned';
+                  final assignment = assignmentByVolunteerId[v.id!];
+                  final formattedTime = formatTimestamp(assignment?.lastModified);
+
+                  final status = assignment?.attribute.isNotEmpty == true
+                      ? assignment!.attribute
+                      : 'Unassigned';
 
                   return [
+                    formattedTime,
                     v.fullName,
                     v.volunteerType,
                     v.department,
@@ -153,8 +165,7 @@ filteredVolunteers.sort((a, b) {
                 }).toList(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 cellAlignment: pw.Alignment.centerLeft,
-                headerDecoration:
-                    const pw.BoxDecoration(color: PdfColors.grey300),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
               ),
           ],
         ),
