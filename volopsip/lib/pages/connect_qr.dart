@@ -4,6 +4,7 @@ import 'package:volopsip/helpers/qr_connection/websocket_server.dart';
 import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';
 import 'package:volopsip/helpers/listeners/message_handler.dart';
 import 'package:volopsip/modal/profile_modal.dart'; 
+import 'package:volopsip/helpers/events_page/ES_adding.dart';
 
 class ConnectQrWs extends StatefulWidget {
   final void Function(String ip)? onPhoneConnected;
@@ -44,7 +45,24 @@ class _ConnectQrWsState extends State<ConnectQrWs> {
         // Show dialog for all non-ping messages
         if (msg.toLowerCase() != 'ping') {
           //_showMessageDialog(msg); #For debugging purposes
-          showVolunteerPopup(context, msg); 
+          if (msg.startsWith('ESADD-')) {
+            final payload = msg.substring(6);
+            final parts = payload.split('-');
+
+            if (parts.length >= 3) {
+              final eventAttr = parts[0];
+              final eventId = parts[1];
+              final qrData = parts.sublist(2).join('-');
+
+              // Call helper to show alert dialog
+              ESAdding.showEsAddDialog(context, eventAttr, eventId, qrData);
+            } else {
+              debugPrint('Invalid ESADD message: $msg');
+            }
+          }
+          else {
+            showVolunteerPopup(context, msg); 
+          }
         }
       },
       onPing: _showPingDialog,
