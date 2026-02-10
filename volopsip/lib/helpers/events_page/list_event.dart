@@ -15,11 +15,18 @@ class EventList extends StatelessWidget {
   final List<Volunteer> allVolunteers; 
   final Future<void> Function()? onUpdated;
 
+  final Set<int> selectedEventIds;
+  final void Function(Event event)? onTapEvent;
+  final void Function(Event event)? onLongPressEvent;
+
   const EventList({
     super.key,
     required this.events,
     required this.volunteerAssignmentsByEvent,
     required this.allVolunteers,
+    required this.selectedEventIds,
+    this.onTapEvent,
+    this.onLongPressEvent,
     this.onUpdated,
   });
 
@@ -37,6 +44,8 @@ class EventList extends StatelessWidget {
         final event = events[index];
         final eventAssignments =
             volunteerAssignmentsByEvent[event.id!] ?? [];
+        
+        final isSelected = selectedEventIds.contains(event.id);
 
         // Count attributes including Unassigned
         final attributeCounts = {for (var attr in event.attributes) attr: 0};
@@ -54,40 +63,50 @@ class EventList extends StatelessWidget {
             .join(' | ');
 
         return Card(
+          color: isSelected ? Colors.blue.withOpacity(0.15) : null,
           child: ListTile(
-            leading: const Icon(Icons.assignment),
+            leading: isSelected
+                ? const Icon(Icons.check_circle, color: Colors.blue)
+                : const Icon(Icons.assignment),
             title: Text(event.name),
             subtitle: Text(subtitleText),
-            trailing: IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'Export PDF',
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) => EventPdfFilterModal(
-                    initialFilter: const EventPdfFilter(), // default = no filters
-                    onApply: (filter) async {
-                      await EventPdfExporter.export(
-                        event: event,
-                        assignments: eventAssignments,
-                        filter: filter,
+            trailing: isSelected
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.picture_as_pdf),
+                    tooltip: 'Export PDF',
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => EventPdfFilterModal(
+                          initialFilter: const EventPdfFilter(),
+                          onApply: (filter) async {
+                            await EventPdfExporter.export(
+                              event: event,
+                              assignments: eventAssignments,
+                              filter: filter,
+                            );
+                          },
+                        ),
                       );
                     },
                   ),
-                );
-              },
-            ),
-
             onTap: () {
+              if (onTapEvent != null) {
+                onTapEvent!(event);
+                return;
+              }
+
               showDialog(
                 context: context,
                 builder: (_) => Dialog(
                   insetPadding: const EdgeInsets.all(20),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
-                      maxWidth: 500, // optional width
+                      maxHeight:
+                          MediaQuery.of(context).size.height * 0.8,
+                      maxWidth: 500,
                     ),
                     child: SingleChildScrollView(
                       child: EventDetailsModal(
@@ -101,6 +120,9 @@ class EventList extends StatelessWidget {
                 ),
               );
             },
+            onLongPress: onLongPressEvent != null
+                ? () => onLongPressEvent!(event)
+                : null,
           ),
         );
       },
