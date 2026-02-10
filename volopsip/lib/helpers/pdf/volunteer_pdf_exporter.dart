@@ -15,28 +15,64 @@ class VolunteerPdfExporter {
   }) async {
     final pdf = pw.Document();
 
-    // 🔑 Header labels (fixed order)
-    final headers = <String>[
-      if (columns.contains(VolunteerPdfColumn.fullName)) 'Name',
-      if (columns.contains(VolunteerPdfColumn.nickname)) 'Nickname',
-      if (columns.contains(VolunteerPdfColumn.age)) 'Age',
-      if (columns.contains(VolunteerPdfColumn.email)) 'Email',
-      if (columns.contains(VolunteerPdfColumn.contactNumber)) 'Contact',
-      if (columns.contains(VolunteerPdfColumn.volunteerType)) 'Volunteer Type',
-      if (columns.contains(VolunteerPdfColumn.department)) 'Department',
+    /// =======================
+    /// BUILD TABLE HEADERS
+    /// =======================
+    final headers = <pw.Widget>[
+      if (columns.contains(VolunteerPdfColumn.fullName))
+        _headerCell('Name'),
+      if (columns.contains(VolunteerPdfColumn.nickname))
+        _headerCell('Nickname'),
+      if (columns.contains(VolunteerPdfColumn.age))
+        _headerCell('Age'),
+      if (columns.contains(VolunteerPdfColumn.email))
+        _headerCell('Email'),
+      if (columns.contains(VolunteerPdfColumn.contactNumber))
+        _headerCell('Contact'),
+      if (columns.contains(VolunteerPdfColumn.volunteerType))
+        _headerCell('Volunteer Type'),
+      if (columns.contains(VolunteerPdfColumn.department))
+        _headerCell('Department'),
+      if (columns.contains(VolunteerPdfColumn.qr))
+        _headerCell('QR'),
     ];
 
-    final data = volunteers.map((v) {
-      return [
-        if (columns.contains(VolunteerPdfColumn.fullName)) v.fullName,
-        if (columns.contains(VolunteerPdfColumn.nickname)) v.nickname ?? '-',
-        if (columns.contains(VolunteerPdfColumn.age)) v.age.toString(),
-        if (columns.contains(VolunteerPdfColumn.email)) v.email,
-        if (columns.contains(VolunteerPdfColumn.contactNumber)) v.contactNumber,
+    /// =======================
+    /// BUILD TABLE ROWS
+    /// =======================
+    final rows = volunteers.map((v) {
+      return <pw.Widget>[
+        if (columns.contains(VolunteerPdfColumn.fullName))
+          _cell(pw.Text(v.fullName)),
+
+        if (columns.contains(VolunteerPdfColumn.nickname))
+          _cell(pw.Text(v.nickname ?? '-')),
+
+        if (columns.contains(VolunteerPdfColumn.age))
+          _cell(pw.Text(v.age.toString())),
+
+        if (columns.contains(VolunteerPdfColumn.email))
+          _cell(pw.Text(v.email)),
+
+        if (columns.contains(VolunteerPdfColumn.contactNumber))
+          _cell(pw.Text(v.contactNumber)),
+
         if (columns.contains(VolunteerPdfColumn.volunteerType))
-          v.volunteerType,
+          _cell(pw.Text(v.volunteerType)),
+
         if (columns.contains(VolunteerPdfColumn.department))
-          v.department,
+          _cell(pw.Text(v.department)),
+
+        if (columns.contains(VolunteerPdfColumn.qr))
+          _cell(
+            pw.BarcodeWidget(
+              barcode: pw.Barcode.qrCode(),
+              data: v.uuid,
+              width: 45,
+              height: 45,
+            ),
+            alignCenter: true,
+          ),
       ];
     }).toList();
 
@@ -81,20 +117,35 @@ class VolunteerPdfExporter {
                       color: PdfColors.grey700,
                     ),
                   )
-                : pw.Table.fromTextArray(
-                    headers: headers,
-                    data: data,
-                    headerStyle:
-                        pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                    cellAlignment: pw.Alignment.centerLeft,
-                    headerDecoration:
-                        const pw.BoxDecoration(color: PdfColors.grey300),
+                : pw.Table(
+                    border: pw.TableBorder.all(
+                      color: PdfColors.grey400,
+                    ),
+                    defaultVerticalAlignment:
+                        pw.TableCellVerticalAlignment.middle,
+                    children: [
+                      // Header row
+                      pw.TableRow(
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.grey300,
+                        ),
+                        children: headers,
+                      ),
+
+                      // Data rows
+                      ...rows.map(
+                        (cells) => pw.TableRow(children: cells),
+                      ),
+                    ],
                   ),
           ],
         ),
       ),
     );
 
+    /// =======================
+    /// SAVE & OPEN FILE
+    /// =======================
     final baseDir = Directory(r'C:\flutter\VolOps-Internal-App-Flutter');
     if (!await baseDir.exists()) {
       await baseDir.create(recursive: true);
@@ -110,6 +161,28 @@ class VolunteerPdfExporter {
       'cmd',
       ['/c', 'start', '', file.path],
       runInShell: true,
+    );
+  }
+
+  /// =======================
+  /// HELPERS
+  /// =======================
+  static pw.Widget _headerCell(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(6),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+      ),
+    );
+  }
+
+  static pw.Widget _cell(pw.Widget child, {bool alignCenter = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(6),
+      child: alignCenter
+          ? pw.Center(child: child)
+          : child,
     );
   }
 }
