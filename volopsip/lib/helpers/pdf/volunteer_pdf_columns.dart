@@ -6,4 +6,5 @@ enum VolunteerPdfColumn {
   contactNumber,
   volunteerType,
   department,
+  qr,
 }

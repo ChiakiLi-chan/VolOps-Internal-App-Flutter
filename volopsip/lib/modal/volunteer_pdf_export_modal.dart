@@ -27,25 +27,56 @@ class _VolunteerPdfExportModalState
   @override
   void initState() {
     super.initState();
-    _selectedColumns = VolunteerPdfColumn.values.toSet();
+
+    /// Default: everything EXCEPT QR
+    _selectedColumns = {
+      VolunteerPdfColumn.fullName,
+      VolunteerPdfColumn.nickname,
+      VolunteerPdfColumn.age,
+      VolunteerPdfColumn.email,
+      VolunteerPdfColumn.contactNumber,
+      VolunteerPdfColumn.volunteerType,
+      VolunteerPdfColumn.department,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
       child: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Export Volunteer PDF',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            const Center(
+              child: Text(
+                'Export Volunteer PDF',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
+
             const SizedBox(height: 16),
+
+            const Text(
+              'Columns',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 8),
 
             ...VolunteerPdfColumn.values.map(
               (col) => CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
                 title: Text(_label(col)),
                 value: _selectedColumns.contains(col),
                 onChanged: (checked) {
@@ -64,25 +95,27 @@ class _VolunteerPdfExportModalState
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    child: const Text('Cancel'),
                     onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
+                    onPressed: _selectedColumns.isEmpty
+                        ? null
+                        : () async {
+                            await VolunteerPdfExporter.export(
+                              volunteers: widget.volunteers,
+                              columns: _selectedColumns,
+                              volunteerTypeFilter:
+                                  widget.volunteerTypeFilter,
+                              departmentFilter:
+                                  widget.departmentFilter,
+                            );
+                            Navigator.pop(context);
+                          },
                     child: const Text('Export'),
-                    onPressed: () async {
-                      await VolunteerPdfExporter.export(
-                        volunteers: widget.volunteers,
-                        columns: _selectedColumns,
-                        volunteerTypeFilter:
-                            widget.volunteerTypeFilter,
-                        departmentFilter:
-                            widget.departmentFilter,
-                      );
-                      Navigator.pop(context);
-                    },
                   ),
                 ),
               ],
@@ -109,6 +142,8 @@ class _VolunteerPdfExportModalState
         return 'Volunteer Type';
       case VolunteerPdfColumn.department:
         return 'Department';
+      case VolunteerPdfColumn.qr:
+        return 'QR Code';
     }
   }
 }
