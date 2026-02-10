@@ -37,6 +37,7 @@ class _EditVolunteerFormState extends State<EditVolunteerForm> {
     _emailController = TextEditingController(text: widget.volunteer.email);
     _contactController = TextEditingController(text: widget.volunteer.contactNumber);
     volunteerType = widget.volunteer.volunteerType;
+    department = widget.volunteer.department;
   }
 
   @override
