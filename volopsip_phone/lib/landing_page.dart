@@ -15,20 +15,59 @@ class _ScanLandingPageState extends State<ScanLandingPage> {
   String? connectedIp; // null = disconnected
   late PhoneConnectionHandler _handler;
 
+  String? lastEventAttr;
+  String? lastEventId;
+  String? lastEventName;
+
+  final ValueNotifier<bool> eventScanningNotifier = ValueNotifier(false);
+
+  bool isEventScanning = false; 
+
   @override
   void initState() {
     super.initState();
     _handler = PhoneConnectionHandler(
       onMessage: (msg) {
-        // Optional: handle messages from PC
-      },
-      onStatusChange: (status) {
-        setState(() {}); // refresh UI when connection status changes
-      },
-      onDisconnected: () {
-        setState(() {
-          connectedIp = null; // auto-update if phone disconnects
-        });
+        debugPrint('Message from PC: $msg');
+
+        if (msg.startsWith('ES-')) {
+          // Remove "ES-"
+          final payload = msg.substring(3);
+          final parts = payload.split('-');
+
+          if (parts.length < 3) return;
+
+          final eventId = parts[0];
+          final eventAttr = parts[1];
+          final eventName = parts.sublist(2).join('-');
+
+          setState(() {
+            isEventScanning = true;
+            lastEventId = eventId;
+            lastEventAttr = eventAttr;
+            lastEventName = eventName;
+          });
+
+          eventScanningNotifier.value = true;
+          // Show start scanning popup
+          _showScanningPopup(eventAttr, eventName);
+
+        } 
+        else if (msg == 'STOPES') {
+          
+          final eventAttr = lastEventAttr ?? 'Unknown';
+          final eventName = lastEventName ?? 'Unknown';
+
+          setState(() {
+            isEventScanning = false;
+            lastEventId = null;
+            lastEventAttr = null;
+            lastEventName = null;
+          });
+          eventScanningNotifier.value = false;
+          // Show stop scanning popup
+          _showStopScanningPopup(eventAttr, eventName);
+        }
       },
     );
   }
@@ -49,6 +88,48 @@ class _ScanLandingPageState extends State<ScanLandingPage> {
       _handler.connect(result);
     }
   }
+
+  void _showStopScanningPopup(String eventAttr, String eventName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Scanning Stopped'),
+        content: Text(
+          'Stopping scan for $eventAttr for $eventName',
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  void _showScanningPopup(String eventAttr, String eventName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // user must acknowledge
+      builder: (context) => AlertDialog(
+        title: const Text('Scanning Started'),
+        content: Text(
+          'Currently scanning $eventAttr for $eventName',
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _disconnect() {
     _handler.dispose();
@@ -73,14 +154,27 @@ class _ScanLandingPageState extends State<ScanLandingPage> {
 
   Future<void> _scanVolunteerQr() async {
     final qrData = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => ScanVolunteerQR()),
-    );
+        context,
+        MaterialPageRoute(
+          builder: (_) => ScanVolunteerQR(
+            eventScanningNotifier: eventScanningNotifier, 
+          ),
+        ),
+      );
 
     if (qrData == null) return;
 
-    _volunteerQrScanned(qrData);
+    String dataToSend = qrData;
+
+    if (isEventScanning) {
+      // Add prefix when scanning is active
+      // Using the last received eventAttr and eventId
+      dataToSend = 'ESADD-$lastEventAttr-$lastEventId-$qrData';
+    }
+
+    _volunteerQrScanned(dataToSend);
   }
+
 
 
   @override

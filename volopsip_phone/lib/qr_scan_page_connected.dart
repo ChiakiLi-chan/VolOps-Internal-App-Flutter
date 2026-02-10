@@ -2,16 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScanVolunteerQR extends StatefulWidget {
-  const ScanVolunteerQR({Key? key}) : super(key: key);
+  final ValueNotifier<bool> eventScanningNotifier;
+
+  const ScanVolunteerQR({super.key, required this.eventScanningNotifier});
 
   @override
   State<ScanVolunteerQR> createState() => _ScanVolunteerQRState();
 }
 
 class _ScanVolunteerQRState extends State<ScanVolunteerQR> {
+  bool isEventScanning = false;
   bool scanningPaused = false; // pause scanning while dialog is open
 
   static const qrPrefix = 'VQROF2026-';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the scanning state
+    isEventScanning = widget.eventScanningNotifier.value;
+
+    // Listen for changes from ScanLandingPage
+    widget.eventScanningNotifier.addListener(_onEventScanningChanged);
+  }
+
+  void _onEventScanningChanged() {
+    setState(() {
+      isEventScanning = widget.eventScanningNotifier.value;
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.eventScanningNotifier.removeListener(_onEventScanningChanged);
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -51,16 +77,20 @@ class _ScanVolunteerQRState extends State<ScanVolunteerQR> {
 
   /// Show a dialog with scanned QR code
   Future<String?> _showResultDialog(String code) async {
+    // Always return the showDialog, just change the content depending on isEventScanning
     return showDialog<String>(
       context: context,
       barrierDismissible: false, // force user to press OK
       builder: (context) => AlertDialog(
-        title: const Text('QR Scanned'),
-        //content: Text(code),
-        content: Text("Volunteer QR Scanned. Press OK to show profile."),
+        title: Text(isEventScanning ? 'Volunteer Scanned' : 'QR Scanned'),
+        content: Text(
+          isEventScanning
+              ? 'Volunteer QR scanned successfully!'
+              : "Volunteer QR Scanned. Press OK to show profile.",
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, code), // returns QR code
+            onPressed: () => Navigator.pop(context, code), // always returns code
             child: const Text('OK'),
           ),
         ],

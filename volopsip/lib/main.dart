@@ -33,7 +33,7 @@ void main() async {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  await resetDatabase();
+  // await resetDatabase();
 
   runApp(
     MultiProvider(

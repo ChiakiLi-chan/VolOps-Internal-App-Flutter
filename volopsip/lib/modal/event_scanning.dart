@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';
 Future<void> eventScanning({
   required BuildContext context,
   required String attribute,
@@ -96,7 +96,13 @@ Future<void> eventScanning({
               ),
               const SizedBox(height: 4),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  // Send message to phone
+                  PersistentWebSocketServer().sendToPhone('STOPES');
+
+                  // Close dialog or page
+                  Navigator.of(context).pop();
+                },
                 child: const Text(
                   'Exit',
                   style: TextStyle(color: Colors.redAccent),

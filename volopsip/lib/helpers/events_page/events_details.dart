@@ -5,6 +5,7 @@ import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/repo/volunteer_repo.dart';
 import 'package:volopsip/repo/events_repo.dart';
 import 'package:volopsip/helpers/events_page/additional_volunteers_to_event.dart';
+import 'package:volopsip/helpers/qr_connection/persistent_ws_server.dart';
 import 'package:volopsip/modal/event_scanning.dart';
 class EventDetailsModal extends StatefulWidget {
   final Event event;
@@ -198,6 +199,9 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
                         icon: const Icon(Icons.qr_code_scanner),
                         tooltip: 'Scan QR',
                         onPressed: () {
+                          PersistentWebSocketServer().sendToPhone(
+                            'ES-${widget.event.id}-$attr-${widget.event.name}',
+                          );
                           eventScanning(
                             context: context,
                             attribute: attr,
