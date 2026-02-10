@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:volopsip/helpers/events_page/log_manager.dart';
+import 'dart:async';
+
 Future<void> eventScanning({
   required BuildContext context,
   required String attribute,
   required String eventName,
 }) {
+  final List<String> logs = [];
+  StreamSubscription? subscription;
+
   return showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (context) {
-      List<String> logs = [];
-
+    builder: (dialogContext) {
       return StatefulBuilder(
         builder: (context, setState) {
-          // Listen to logs
-          final subscription = LogManager().logStream.listen((log) {
-            // Only update if still mounted
-            if (context.mounted) {
-              setState(() {
-                logs.add('• $log');
-              });
-            }
+          // ✅ Create listener ONCE
+          subscription ??= LogManager().logStream.listen((log) {
+            if (!dialogContext.mounted) return;
+            setState(() {
+              logs.add('• $log');
+            });
           });
 
           return AlertDialog(
@@ -36,17 +37,23 @@ Future<void> eventScanning({
                       style: Theme.of(context).textTheme.bodyMedium,
                       children: [
                         const TextSpan(
-                            text: 'You are currently scanning volunteers to mark as '),
+                          text:
+                              'You are currently scanning volunteers to mark as ',
+                        ),
                         TextSpan(
                           text: attribute,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.blue),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
                         ),
                         const TextSpan(text: ' in '),
                         TextSpan(
                           text: eventName,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.green),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
                         ),
                         const TextSpan(text: '.'),
                       ],
@@ -77,22 +84,18 @@ Future<void> eventScanning({
                   ),
                   const SizedBox(height: 12),
                   RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+                    text: const TextSpan(
+                      style: TextStyle(fontSize: 12, color: Colors.redAccent),
                       children: [
-                        const TextSpan(text: 'Exiting this will end scanning for '),
-                        TextSpan(
-                            text: attribute,
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                        const TextSpan(text: '.'),
+                        TextSpan(text: 'Exiting this will end scanning.'),
                       ],
                     ),
                   ),
                   const SizedBox(height: 4),
                   TextButton(
                     onPressed: () {
-                      subscription.cancel(); // cancel the log listener
-                      Navigator.of(context).pop(true); // return a value to parent
+                      subscription?.cancel(); // ✅ cancel exactly one listener
+                      Navigator.of(context).pop(true);
                     },
                     child: const Text(
                       'Exit',
@@ -106,5 +109,7 @@ Future<void> eventScanning({
         },
       );
     },
-  );
+  ).whenComplete(() {
+    subscription?.cancel(); // ✅ safety cleanup
+  });
 }
