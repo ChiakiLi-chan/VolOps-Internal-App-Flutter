@@ -25,7 +25,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 2, // ⬅️ INCREMENT VERSION
+      version: 4, // ⬅️ INCREMENT VERSION
       onCreate: _onCreate,
       onUpgrade: _onUpgrade, // ⬅️ ADD MIGRATION
     );
@@ -72,10 +72,19 @@ class DatabaseHelper {
     ''');
   }
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute(
-        'ALTER TABLE volunteers ADD COLUMN photo_path TEXT'
-      );
+      if (oldVersion < 2) {
+        // Add photo_path to volunteers
+        await db.execute(
+          'ALTER TABLE volunteers ADD COLUMN photo_path TEXT'
+        );
+      }
+
+      if (oldVersion < 4) {
+        // Add last_modified column to event_volunteers safely
+        await db.execute(
+          'ALTER TABLE event_volunteers ADD COLUMN last_modified TEXT'
+        );
+      }
     }
-  }
+
 }

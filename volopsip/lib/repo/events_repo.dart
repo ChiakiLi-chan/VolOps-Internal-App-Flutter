@@ -115,7 +115,7 @@ class EventRepository {
 
     /// Add a single volunteer to an event with attribute
   Future<void> addVolunteerToEventWithAttribute(
-      int volunteerId, int eventId, String attribute) async {
+    int volunteerId, int eventId, String attribute) async {
     final db = await database;
 
     // Avoid duplicates
@@ -126,22 +126,30 @@ class EventRepository {
       limit: 1,
     );
 
+    final now = DateTime.now().toIso8601String(); // current timestamp
+
     if (exists.isEmpty) {
+      // Insert new row with last_modified
       await db.insert('event_volunteers', {
         'volunteer_id': volunteerId,
         'event_id': eventId,
         'attribute': attribute,
+        'last_modified': now, // <-- timestamp
       });
     } else {
-      // update attribute if already exists
+      // Update attribute and last_modified
       await db.update(
         'event_volunteers',
-        {'attribute': attribute},
+        {
+          'attribute': attribute,
+          'last_modified': now, // <-- update timestamp
+        },
         where: 'volunteer_id = ? AND event_id = ?',
         whereArgs: [volunteerId, eventId],
       );
     }
   }
+
 
   /// Delete assignment for a specific volunteer and event
   Future<void> deleteAssignment(int volunteerId, int eventId) async {
@@ -206,12 +214,14 @@ class EventRepository {
           'event_id': eventId,
           'volunteer_id': volId,
           'attribute': '', // default to Unassigned
+          'last_modified': DateTime.now().toIso8601String(), // <-- add timestamp
         });
       }
     }
 
     await batch.commit(noResult: true);
   }
+
 
   /// Delete an event and its volunteer assignments
   Future<int> deleteEvent(int id) async {
@@ -220,17 +230,18 @@ class EventRepository {
     return await db.delete('events', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Get volunteers assigned to a specific event
+  /// Get volunteers assigned to a specific event, including last_modified
   Future<List<Map<String, dynamic>>> getAssignedVolunteersWithAttribute(int eventId) async {
     final db = await database;
     final result = await db.query(
       'event_volunteers',
+      columns: ['id', 'volunteer_id', 'attribute', 'last_modified'], // include last_modified
       where: 'event_id = ?',
       whereArgs: [eventId],
     );
-    // returns list of {volunteer_id, attribute}
     return result;
   }
+
 
   Future<Map<int, String>> getVolunteerAttributesMap(int eventId) async {
     final db = await database;
@@ -248,9 +259,13 @@ class EventRepository {
   /// Update a single assignment's attribute
   Future<int> updateAssignmentAttribute(int assignmentId, String attribute) async {
     final db = await database;
+    final now = DateTime.now().toIso8601String(); // current timestamp
     return db.update(
       'event_volunteers',
-      {'attribute': attribute},
+      {
+        'attribute': attribute,
+        'last_modified': now, // update timestamp
+      },
       where: 'id = ?',
       whereArgs: [assignmentId],
     );
@@ -262,11 +277,15 @@ class EventRepository {
 
     final db = await database;
     final batch = db.batch();
+    final now = DateTime.now().toIso8601String(); // current timestamp
 
     for (var id in assignmentIds) {
       batch.update(
         'event_volunteers',
-        {'attribute': attribute},
+        {
+          'attribute': attribute,
+          'last_modified': now, // update timestamp
+        },
         where: 'id = ?',
         whereArgs: [id],
       );
