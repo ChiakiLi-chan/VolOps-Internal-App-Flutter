@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/volunteer.dart';
 import '../repo/volunteer_repo.dart';
 //import 'package:uuid/uuid.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class AddVolunteerModal extends StatefulWidget {
   final VoidCallback onVolunteerAdded;
@@ -23,9 +25,13 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _driveLinkController = TextEditingController();
 
   String volunteerType = 'Core';
   String department = 'Finance';
+
+ /// Image state
+  String? _localImagePath;
 
   @override
   void dispose() {
@@ -35,7 +41,26 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
     _ageController.dispose();
     _emailController.dispose();
     _contactController.dispose();
+    _driveLinkController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickLocalImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _localImagePath = result.files.single.path!;
+        _driveLinkController.clear();
+      });
+    }
+  }
+
+  String? get _finalPhotoPath {
+    if (_localImagePath != null) return _localImagePath;
+    if (_driveLinkController.text.trim().isNotEmpty) {
+      return _driveLinkController.text.trim();
+    }
+    return null;
   }
 
   @override
@@ -58,6 +83,52 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
+
+            /// IMAGE PREVIEW
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _localImagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_localImagePath!),
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : const Icon(Icons.person, size: 60, color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.folder_open),
+                    label: const Text('Pick Image'),
+                    onPressed: _pickLocalImage,
+                  ),
+                ],
+              ),
+
+              /// DRIVE LINK
+              TextFormField(
+                controller: _driveLinkController,
+                decoration: const InputDecoration(
+                  labelText: 'Google Drive Image Link (optional)',
+                ),
+                onChanged: (_) {
+                  if (_driveLinkController.text.isNotEmpty) {
+                    setState(() => _localImagePath = null);
+                  }
+                },
+              ),
+
+              const Divider(height: 32),
 
               // First Name
               TextFormField(
@@ -148,7 +219,8 @@ class _AddVolunteerModalState extends State<AddVolunteerModal> {
                       email: _emailController.text.trim(),
                       contactNumber: _contactController.text.trim(),
                       volunteerType: volunteerType,
-                      department: department, 
+                      department: department,
+                      photoPath: _finalPhotoPath, 
                     );
 
                     await _repo.createVolunteer(newVolunteer);
