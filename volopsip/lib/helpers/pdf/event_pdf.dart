@@ -39,7 +39,21 @@ class EventPdfExporter {
 
     final filteredVolunteers = volunteers.where((v) {
       if (v.id == null) return false;
-      return appliedFilter.matches(v);
+
+      // Volunteer-level filters
+      if (!appliedFilter.matches(v)) return false;
+
+      // 🔑 Attribute filter (EVENT-SPECIFIC)
+      if (appliedFilter.attributes.isNotEmpty) {
+        final status =
+            assignmentStatusByVolunteerId[v.id!] ?? 'Unassigned';
+
+        if (!appliedFilter.attributes.contains(status)) {
+          return false;
+        }
+      }
+
+      return true;
     }).toList();
 
     // 🔑 APPLY SORTING
@@ -93,6 +107,8 @@ filteredVolunteers.sort((a, b) {
                         'Volunteer Type: ${appliedFilter.volunteerType}',
                       if (appliedFilter.departments.isNotEmpty)
                         'Departments: ${appliedFilter.departments.join(', ')}',
+                      if (appliedFilter.attributes.isNotEmpty)
+                        'Status: ${appliedFilter.attributes.join(', ')}',   
                     ].join(' | '),
             ),
 
