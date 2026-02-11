@@ -25,7 +25,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 4, // ⬅️ INCREMENT VERSION
+      version: 5, // ⬅️ INCREMENT VERSION
       onCreate: _onCreate,
       onUpgrade: _onUpgrade, // ⬅️ ADD MIGRATION
     );
@@ -66,6 +66,7 @@ class DatabaseHelper {
         event_id INTEGER NOT NULL,
         volunteer_id INTEGER NOT NULL,
         attribute TEXT NOT NULL,
+        last_modified TEXT,
         FOREIGN KEY(event_id) REFERENCES events(id),
         FOREIGN KEY(volunteer_id) REFERENCES volunteers(id)
       )
@@ -79,7 +80,7 @@ class DatabaseHelper {
         );
       }
 
-      if (oldVersion < 4) {
+      if (oldVersion < 5) {
         // Add last_modified column to event_volunteers safely
         await db.execute(
           'ALTER TABLE event_volunteers ADD COLUMN last_modified TEXT'
