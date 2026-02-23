@@ -53,46 +53,36 @@ class _VolunteerDetailsModalState extends State<VolunteerDetailsModal> {
   Widget _buildPhoto() {
     final path = volunteer.photoPath;
 
-    if (path == null || path.isEmpty) {
-      return Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade300,
+    if (path == null || path.isEmpty) return const SizedBox.shrink();
+
+    try {
+      if (path.startsWith('http')) {
+        return ClipRRect(
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(Icons.person, size: 60, color: Colors.white),
-      );
+          child: Image.network(
+            path,
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        );
+      } else {
+        final file = File(path);
+        if (!file.existsSync()) return const SizedBox.shrink();
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            file,
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+    } catch (_) {
+      return const SizedBox.shrink(); // just don't display if something goes wrong
     }
-
-    if (path.startsWith('http')) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          path,
-          width: 120,
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              Container(
-                width: 120,
-                height: 120,
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.person, size: 60, color: Colors.white),
-              ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.file(
-        File(path),
-        width: 120,
-        height: 120,
-        fit: BoxFit.cover,
-      ),
-    );
   }
 
   @override

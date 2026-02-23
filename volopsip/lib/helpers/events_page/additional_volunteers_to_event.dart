@@ -108,6 +108,36 @@ class _AddVolunteersToEventModalState extends State<AddVolunteersToEventModal> {
           const Divider(),
 
           // --- Volunteer Checkboxes ---
+          if (availableVolunteers.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ElevatedButton.icon(
+                icon: Icon(
+                  selectedVolunteerIds.containsAll(availableVolunteers.map((v) => v.id!))
+                      ? Icons.remove_done
+                      : Icons.select_all,
+                ),
+                label: Text(
+                  selectedVolunteerIds.containsAll(availableVolunteers.map((v) => v.id!))
+                      ? 'Deselect All Filtered'
+                      : 'Select All Filtered',
+                ),
+                onPressed: () {
+                  setState(() {
+                    final allFilteredIds = availableVolunteers.map((v) => v.id!).toList();
+
+                    if (selectedVolunteerIds.containsAll(allFilteredIds)) {
+                      // All filtered are already selected → deselect
+                      selectedVolunteerIds.removeAll(allFilteredIds);
+                    } else {
+                      // Not all are selected → select all
+                      selectedVolunteerIds.addAll(allFilteredIds);
+                    }
+                  });
+                },
+              ),
+            ),
+
           ...availableVolunteers.map((v) {
             final selected = selectedVolunteerIds.contains(v.id);
             return CheckboxListTile(

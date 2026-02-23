@@ -37,31 +37,44 @@ class VolunteerListItem extends StatelessWidget {
       return const Icon(Icons.person, size: 50, color: Colors.white);
     }
 
-    if (path.startsWith('http')) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          path,
-          width: 80,
-          height: 80,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              const Icon(Icons.person, size: 50, color: Colors.white),
-        ),
-      );
+    String imageUrl = path;
+
+    // --- Convert Google Drive links to direct links ---
+    if (path.contains("drive.google.com")) {
+      final uri = Uri.parse(path);
+      String? fileId;
+
+      // Check for "id=" query parameter
+      if (uri.queryParameters.containsKey('id')) {
+        fileId = uri.queryParameters['id'];
+      } else {
+        // Sometimes the file ID is in the path itself: /file/d/FILE_ID/view
+        final segments = uri.pathSegments;
+        final idIndex = segments.indexOf('d');
+        if (idIndex != -1 && segments.length > idIndex + 1) {
+          fileId = segments[idIndex + 1];
+        }
+      }
+
+      if (fileId != null) {
+        imageUrl = 'https://drive.google.com/uc?export=view&id=$fileId';
+      }
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Image.file(
-        File(path),
+      child: Image.network(
+        imageUrl,
         width: 80,
         height: 80,
         fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.person, size: 50, color: Colors.white),
       ),
     );
   }
 
+  
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
