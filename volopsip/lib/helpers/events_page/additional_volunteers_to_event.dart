@@ -24,14 +24,31 @@ class AddVolunteersToEventModal extends StatefulWidget {
 
 class _AddVolunteersToEventModalState extends State<AddVolunteersToEventModal> {
   Set<int> selectedVolunteerIds = {};
+  Set<String> selectedTypes = {};
+  Set<String> selectedDepartments = {};
 
   @override
   Widget build(BuildContext context) {
-    // filter volunteers not already assigned
-    final availableVolunteers = widget.allVolunteers
-        .where((v) => !widget.currentAssignments
-            .any((a) => a.volunteerId == v.id))
+    // Filter out volunteers already assigned
+    var availableVolunteers = widget.allVolunteers
+        .where((v) => !widget.currentAssignments.any((a) => a.volunteerId == v.id))
         .toList();
+
+    // Apply type & department filters
+    if (selectedTypes.isNotEmpty) {
+      availableVolunteers = availableVolunteers
+          .where((v) => selectedTypes.contains(v.volunteerType))
+          .toList();
+    }
+    if (selectedDepartments.isNotEmpty) {
+      availableVolunteers = availableVolunteers
+          .where((v) => selectedDepartments.contains(v.department))
+          .toList();
+    }
+
+    // Get all unique types and departments for filter chips
+    final allTypes = widget.allVolunteers.map((v) => v.volunteerType).toSet().toList();
+    final allDepartments = widget.allVolunteers.map((v) => v.department).toSet().toList();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -54,6 +71,43 @@ class _AddVolunteersToEventModalState extends State<AddVolunteersToEventModal> {
             ),
           ),
           const Divider(),
+
+          // --- Filter Chips ---
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              ...allTypes.map((type) => FilterChip(
+                    label: Text(type),
+                    selected: selectedTypes.contains(type),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          selectedTypes.add(type);
+                        } else {
+                          selectedTypes.remove(type);
+                        }
+                      });
+                    },
+                  )),
+              ...allDepartments.map((dept) => FilterChip(
+                    label: Text(dept),
+                    selected: selectedDepartments.contains(dept),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          selectedDepartments.add(dept);
+                        } else {
+                          selectedDepartments.remove(dept);
+                        }
+                      });
+                    },
+                  )),
+            ],
+          ),
+          const Divider(),
+
+          // --- Volunteer Checkboxes ---
           ...availableVolunteers.map((v) {
             final selected = selectedVolunteerIds.contains(v.id);
             return CheckboxListTile(
@@ -70,6 +124,7 @@ class _AddVolunteersToEventModalState extends State<AddVolunteersToEventModal> {
               },
             );
           }).toList(),
+
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 
-/// Simple model for displaying volunteers in the dialog
 class VolunteerOption {
   final int id;
   final String name;
+  final String volunteerType;
+  final String department;
 
-  VolunteerOption({required this.id, required this.name});
+  VolunteerOption({
+    required this.id,
+    required this.name,
+    required this.volunteerType,
+    required this.department,
+  });
 }
 
-/// Shows a multi-select dialog of volunteers
-/// Returns a list of selected volunteer IDs
 Future<List<int>> showVolunteerSelector(
   BuildContext context, {
   required List<VolunteerOption> volunteers,
   List<int>? initiallySelected,
 }) async {
   final selectedIds = initiallySelected != null ? List<int>.from(initiallySelected) : <int>[];
+
+  // Unique volunteer types and departments for filters
+  final allTypes = volunteers.map((v) => v.volunteerType).toSet().toList();
+  final allDepartments = volunteers.map((v) => v.department).toSet().toList();
+
+  final selectedTypes = <String>{};
+  final selectedDepartments = <String>{};
 
   return showDialog<List<int>>(
     context: context,
@@ -24,47 +35,105 @@ Future<List<int>> showVolunteerSelector(
         title: const Text('Select Volunteers'),
         content: SizedBox(
           width: double.maxFinite,
+          height: 450,
           child: StatefulBuilder(
             builder: (context, setState) {
-              bool allSelected = selectedIds.length == volunteers.length;
+              // Filter volunteers based on currently selected filters
+              final filteredVolunteers = volunteers.where((v) {
+                final matchesType = selectedTypes.isEmpty || selectedTypes.contains(v.volunteerType);
+                final matchesDept = selectedDepartments.isEmpty || selectedDepartments.contains(v.department);
+                return matchesType && matchesDept;
+              }).toList();
+
+              // Check if all filtered volunteers are selected
+              final allFilteredSelected = filteredVolunteers.every((v) => selectedIds.contains(v.id));
 
               return Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // --- Select All Checkbox ---
-                  CheckboxListTile(
-                    value: allSelected,
-                    title: const Text('Select All'),
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedIds.clear();
-                          selectedIds.addAll(volunteers.map((v) => v.id));
-                        } else {
-                          selectedIds.clear();
-                        }
-                      });
-                    },
+                  // --- Volunteer Type Filters ---
+                  Wrap(
+                    spacing: 8,
+                    children: allTypes.map((type) {
+                      final isSelected = selectedTypes.contains(type);
+                      return FilterChip(
+                        label: Text(type),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              selectedTypes.add(type);
+                            } else {
+                              selectedTypes.remove(type);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+                  // --- Department Filters ---
+                  Wrap(
+                    spacing: 8,
+                    children: allDepartments.map((dep) {
+                      final isSelected = selectedDepartments.contains(dep);
+                      return FilterChip(
+                        label: Text(dep),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              selectedDepartments.add(dep);
+                            } else {
+                              selectedDepartments.remove(dep);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
                   ),
                   const Divider(),
-                  // --- Individual Volunteers ---
+                  // --- Select All Matching Filter Button ---
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      icon: Icon(allFilteredSelected ? Icons.remove_circle_outline : Icons.check_circle_outline),
+                      label: Text(allFilteredSelected ? 'Unselect All Filtered' : 'Select All Filtered'),
+                      onPressed: () {
+                        setState(() {
+                          if (allFilteredSelected) {
+                            // Unselect all filtered
+                            for (final v in filteredVolunteers) {
+                              selectedIds.remove(v.id);
+                            }
+                          } else {
+                            // Select all filtered
+                            for (final v in filteredVolunteers) {
+                              if (!selectedIds.contains(v.id)) selectedIds.add(v.id);
+                            }
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                  // --- Volunteer List ---
                   Expanded(
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: volunteers.length,
                       itemBuilder: (_, index) {
-                        final vol = volunteers[index];
-                        final isSelected = selectedIds.contains(vol.id);
+                        final v = volunteers[index];
+                        final isSelected = selectedIds.contains(v.id);
 
                         return CheckboxListTile(
                           value: isSelected,
-                          title: Text(vol.name),
+                          title: Text('${v.name} (${v.volunteerType}, ${v.department})'),
                           onChanged: (value) {
                             setState(() {
                               if (value == true) {
-                                selectedIds.add(vol.id);
+                                selectedIds.add(v.id);
                               } else {
-                                selectedIds.remove(vol.id);
+                                selectedIds.remove(v.id);
                               }
                             });
                           },
@@ -79,7 +148,7 @@ Future<List<int>> showVolunteerSelector(
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, <int>[]), // cancel, return empty
+            onPressed: () => Navigator.pop(context, <int>[]),
             child: const Text('Cancel'),
           ),
           ElevatedButton(

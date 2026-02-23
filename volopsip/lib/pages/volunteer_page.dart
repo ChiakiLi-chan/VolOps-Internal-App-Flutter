@@ -10,6 +10,7 @@ import 'package:volopsip/helpers/volunteer_page/list_item.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_provider.dart';
 import 'package:volopsip/modal/volunteer_pdf_export_modal.dart';
 import 'package:volopsip/helpers/volunteer_page/vol_details.dart';
+import 'package:volopsip/helpers/excel/export_volunteers.dart'; 
 
 class VolunteerPage extends StatefulWidget {
   const VolunteerPage({super.key});
@@ -182,6 +183,16 @@ class _VolunteerPageState extends State<VolunteerPage> {
                         volunteerTypeFilter: provider.filterVolunteerType,
                         departmentFilter: provider.filterDepartments,
                       ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.table_view),
+                  onPressed: () async {
+                    await VolunteerExcelExport.export(
+                      volunteers: provider.volunteers,
+                      volunteerTypeFilter: provider.filterVolunteerType,
+                      departmentFilter: provider.filterDepartments,
                     );
                   },
                 ),

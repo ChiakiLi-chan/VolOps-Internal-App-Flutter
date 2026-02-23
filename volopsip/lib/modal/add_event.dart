@@ -127,9 +127,14 @@ class _AddEventModalState extends State<AddEventModal> {
                   if (_allVolunteers.isEmpty) return;
 
                   // Convert volunteers to options
-                  final volunteerOptions = _allVolunteers
-                      .map((v) => VolunteerOption(id: v.id!, name: v.firstName))
-                      .toList();
+                  final volunteerOptions = _allVolunteers.map((v) {
+                    return VolunteerOption(
+                      id: v.id!,
+                      name: '${v.firstName} ${v.lastName}', // optional: full name
+                      volunteerType: v.volunteerType,
+                      department: v.department,
+                    );
+                  }).toList();
 
                   final selectedIds = await showVolunteerSelector(
                     context,

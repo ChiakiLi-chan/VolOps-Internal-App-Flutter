@@ -69,7 +69,15 @@ class AddVolunteerExcelModal extends StatelessWidget {
             ? row[8]?.value?.toString().trim()
             : null;
 
+        
+        final uuidFromExcel = row.length > 9
+        ? row[9]?.value?.toString().trim()
+        : null;
+
         final volunteer = Volunteer(
+          uuid: uuidFromExcel != null && uuidFromExcel.isNotEmpty
+          ? uuidFromExcel
+          : null,
           firstName: firstName,
           lastName: lastName,
           nickname: row[2]?.value?.toString().trim().isEmpty ?? true
