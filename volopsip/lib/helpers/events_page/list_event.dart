@@ -6,6 +6,7 @@ import 'package:volopsip/models/volunteer.dart';
 import 'package:volopsip/helpers/pdf/event_pdf.dart';
 import 'package:volopsip/modal/event_pdf_filter_modal.dart';
 import 'package:volopsip/helpers/pdf/event_pdf_filter.dart';
+import 'package:volopsip/modal/pdfOrCSV.dart';
 
 class EventList extends StatelessWidget {
   final List<Event> events;
@@ -71,28 +72,21 @@ class EventList extends StatelessWidget {
             subtitle: Text(subtitleText),
 
             trailing: isSelected
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.picture_as_pdf),
-                    tooltip: 'Export PDF',
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => EventPdfFilterModal(
-                          initialFilter: const EventPdfFilter(),
-                          eventAttributes: event.attributes, // ✅ HERE
-                          onApply: (filter) async {
-                            await EventPdfExporter.export(
-                              event: event,
-                              assignments: eventAssignments,
-                              filter: filter,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Export',
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => EventExportFormatDialog(
+                        event: event,
+                        eventAssignments: eventAssignments,
+                      ),
+                    );
+                  },
+                ),
 
             // ✅ SINGLE, CORRECT TAP HANDLER
             onTap: () => onTapEvent?.call(event),

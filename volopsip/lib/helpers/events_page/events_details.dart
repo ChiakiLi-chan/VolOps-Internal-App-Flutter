@@ -125,7 +125,6 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -135,158 +134,175 @@ class _EventDetailsModalState extends State<EventDetailsModal> {
         right: 16,
         top: 16,
       ),
-      child: Wrap(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.assignment),
-            title: Text(
-              widget.event.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!editMode)
-                  IconButton(
-                    icon: const Icon(Icons.person_add_alt_1, color: Colors.green),
-                    onPressed: () async {
-                      await showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => AddVolunteersToEventModal(
-                          eventId: widget.event.id!,
-                          allVolunteers: allVolunteers,
-                          currentAssignments: widget.assignments,
-                          onAdded: () async {
-                            final updatedAssignments =
-                                await EventRepository().getAllEventAssignments();
-                            widget.assignments.clear();
-                            widget.assignments.addAll(
-                                updatedAssignments.where((a) => a.eventId == widget.event.id));
-                            _groupAssignments();
-                            setState(() {});
-                            if (widget.onUpdated != null) await widget.onUpdated!();
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                if (editMode)
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                    onPressed: selectedVolunteerIds.isEmpty
-                        ? null
-                        : () async {
-                            for (var id in selectedVolunteerIds) {
-                              await EventRepository().deleteAssignment(id, widget.event.id!);
-                            }
-                            widget.assignments.removeWhere(
-                                (a) => selectedVolunteerIds.contains(a.volunteerId));
-                            selectedVolunteerIds.clear();
-                            _groupAssignments();
-                            setState(() {
-                              editMode = false;
-                            });
-                            if (widget.onUpdated != null) await widget.onUpdated!();
-                          },
-                  ),
-                IconButton(
-                  icon: Icon(editMode ? Icons.close : Icons.edit),
-                  onPressed: () {
-                    setState(() {
-                      editMode = !editMode;
-                      if (!editMode) selectedVolunteerIds.clear();
-                    });
-                  },
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.assignment),
+                title: Text(
+                  widget.event.name,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          ...attributeAssignments.entries.map((entry) {
-            final attr = entry.key;
-            final assignments = entry.value;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  title: Text(
-                    attr,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!editMode)
                       IconButton(
-                        icon: const Icon(Icons.qr_code_scanner),
-                        tooltip: 'Scan QR',
+                        icon: const Icon(Icons.person_add_alt_1, color: Colors.green),
                         onPressed: () async {
-                          PersistentWebSocketServer().sendToPhone(
-                            'ES-${widget.event.id}-$attr-${widget.event.name}',
-                          );
-
-                          await eventScanning(
+                          await showModalBottomSheet(
                             context: context,
-                            attribute: attr,
-                            eventName: widget.event.name,
+                            isScrollControlled: true,
+                            builder: (_) => AddVolunteersToEventModal(
+                              eventId: widget.event.id!,
+                              allVolunteers: allVolunteers,
+                              currentAssignments: widget.assignments,
+                              onAdded: () async {
+                                final updatedAssignments =
+                                    await EventRepository().getAllEventAssignments();
+                                widget.assignments.clear();
+                                widget.assignments.addAll(
+                                    updatedAssignments.where((a) => a.eventId == widget.event.id));
+                                _groupAssignments();
+                                setState(() {});
+                                if (widget.onUpdated != null) await widget.onUpdated!();
+                              },
+                            ),
                           );
-
-                          final updatedAssignments =
-                              await EventRepository().getAllEventAssignments();
-                          widget.assignments.clear();
-                          widget.assignments.addAll(
-                              updatedAssignments.where((a) => a.eventId == widget.event.id));
-
-                          _groupAssignments();
-                          setState(() {});
-
-                          if (widget.onUpdated != null) {
-                            await widget.onUpdated!();
-                          }
                         },
                       ),
-                      if (editMode)
-                        IconButton(
-                          icon: const Icon(Icons.drive_file_move, color: Colors.blue),
-                          onPressed: selectedVolunteerIds.isEmpty
-                              ? null
-                              : () => _moveSelectedVolunteers(attr),
-                        ),
-                    ],
-                  ),
-                ),
-                ...assignments.map((a) {
-                  final selected = selectedVolunteerIds.contains(a.volunteerId);
-                  final formattedTime = formatTimestamp(a.lastModified);
-
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 16.0),
-                    child: ListTile(
-                      leading: editMode
-                          ? Checkbox(
-                              value: selected,
-                              onChanged: (_) => _toggleVolunteerSelection(a.volunteerId),
-                            )
-                          : const Icon(Icons.person, size: 20),
-                      title: Text(_getVolunteerName(a.volunteerId)),
-                      trailing: formattedTime.isNotEmpty
-                          ? Text(
-                              formattedTime,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            )
-                          : null,
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
+                    if (editMode)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: selectedVolunteerIds.isEmpty
+                            ? null
+                            : () async {
+                                for (var id in selectedVolunteerIds) {
+                                  await EventRepository().deleteAssignment(id, widget.event.id!);
+                                }
+                                widget.assignments.removeWhere(
+                                    (a) => selectedVolunteerIds.contains(a.volunteerId));
+                                selectedVolunteerIds.clear();
+                                _groupAssignments();
+                                setState(() {
+                                  editMode = false;
+                                });
+                                if (widget.onUpdated != null) await widget.onUpdated!();
+                              },
+                      ),
+                    IconButton(
+                      icon: Icon(editMode ? Icons.close : Icons.edit),
+                      onPressed: () {
+                        setState(() {
+                          editMode = !editMode;
+                          if (!editMode) selectedVolunteerIds.clear();
+                        });
+                      },
                     ),
-                  );
-                }),
-                const Divider(),
-              ],
-            );
-          }),
-          const SizedBox(height: 16),
-        ],
+                  ],
+                ),
+              ),
+              const Divider(),
+
+              // --- Scrollable assignments ---
+              ...attributeAssignments.entries.map((entry) {
+                final attr = entry.key;
+                final assignments = entry.value;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      title: Text(
+                        attr,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.qr_code_scanner),
+                            tooltip: 'Scan QR',
+                            onPressed: () async {
+                              PersistentWebSocketServer().sendToPhone(
+                                'ES-${widget.event.id}-$attr-${widget.event.name}',
+                              );
+
+                              await eventScanning(
+                                context: context,
+                                attribute: attr,
+                                eventName: widget.event.name,
+                              );
+
+                              final updatedAssignments =
+                                  await EventRepository().getAllEventAssignments();
+                              widget.assignments.clear();
+                              widget.assignments.addAll(
+                                  updatedAssignments.where((a) => a.eventId == widget.event.id));
+
+                              _groupAssignments();
+                              setState(() {});
+
+                              if (widget.onUpdated != null) {
+                                await widget.onUpdated!();
+                              }
+                            },
+                          ),
+                          if (editMode)
+                            IconButton(
+                              icon: const Icon(Icons.drive_file_move, color: Colors.blue),
+                              onPressed: selectedVolunteerIds.isEmpty
+                                  ? null
+                                  : () => _moveSelectedVolunteers(attr),
+                            ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 250, // Scrollable for volunteers
+                      child: ListView.builder(
+                        itemCount: assignments.length,
+                        itemBuilder: (context, index) {
+                          final a = assignments[index];
+                          final selected = selectedVolunteerIds.contains(a.volunteerId);
+                          final formattedTime = formatTimestamp(a.lastModified);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: ListTile(
+                              leading: editMode
+                                  ? Checkbox(
+                                      value: selected,
+                                      onChanged: (_) => _toggleVolunteerSelection(a.volunteerId),
+                                    )
+                                  : const Icon(Icons.person, size: 20),
+                              title: Text(_getVolunteerName(a.volunteerId)),
+                              trailing: formattedTime.isNotEmpty
+                                  ? Text(
+                                      formattedTime,
+                                      style: const TextStyle(
+                                          fontSize: 12, color: Colors.grey),
+                                    )
+                                  : null,
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const Divider(),
+                  ],
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       ),
     );
   }
